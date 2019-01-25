@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package de.omegazirkel.tools;
+package de.omegazirkel.risingworld.tools;
 
 import java.nio.file.Path;
 

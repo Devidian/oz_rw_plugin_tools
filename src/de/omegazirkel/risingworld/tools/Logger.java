@@ -1,4 +1,4 @@
-package de.omegazirkel.tools;
+package de.omegazirkel.risingworld.tools;
 
 public class Logger {
     private static final int LEVEL_DEBUG = 0;
@@ -7,7 +7,7 @@ public class Logger {
     private int level = LEVEL_DEBUG;
 
     /**
-     * 
+     *
      * @param prefix
      * @param level
      */
@@ -17,7 +17,7 @@ public class Logger {
     }
 
     /**
-     * 
+     *
      * @param prefix
      */
     public Logger(String prefix) {
@@ -28,7 +28,7 @@ public class Logger {
     }
 
     /**
-     * 
+     *
      * @param message
      */
     public void out(String message) {
@@ -36,7 +36,7 @@ public class Logger {
     }
 
     /**
-     * 
+     *
      * @param message
      * @param level
      */

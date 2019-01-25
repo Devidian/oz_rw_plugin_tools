@@ -1,4 +1,4 @@
-package de.omegazirkel.tools;
+package de.omegazirkel.risingworld.tools;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,51 +15,69 @@ public class I18n {
     private Map<String, Properties> language = new HashMap<String, Properties>();
     private static final String defaultLanguage = "en";
     private Plugin plugin = null;
+    private static Logger log = null;
 
+    /**
+     * 
+     * @param plugin
+     */
     public I18n(Plugin plugin) {
         this.plugin = plugin;
+        log = new Logger("[OZ.i18n]", 0);
         this.loadLanguageData(plugin.getPath());
     }
 
     /**
      * 
+     * @param plugin
+     * @param logLevel
+     */
+    public I18n(Plugin plugin, int logLevel) {
+        this.plugin = plugin;
+        log = new Logger("[OZ.i18n]", logLevel);
+        this.loadLanguageData(this.plugin.getPath());
+    }
+
+    /**
+     *
      * @param pluginPath
      */
     private void loadLanguageData(String pluginPath) {
+        log.out("Loading language files from " + pluginPath + "/i18n'");
         File folder = new File(pluginPath + "/i18n");
         File[] listOfFiles = folder.listFiles();
         FileInputStream in;
         try {
-            // System.out.println("Files found: "+listOfFiles.length);
+            log.out("Files found: " + listOfFiles.length, 0);
             for (int i = 0; i < listOfFiles.length; i++) {
-                // System.out.println("found: "+listOfFiles[i].getName());
+                log.out("loading: " + listOfFiles[i].getName(), 0);
                 if (listOfFiles[i].isFile() && listOfFiles[i].getName().endsWith("properties")) {
                     String lang = listOfFiles[i].getName().substring(0, 2);
-                    // System.out.println("lang: "+lang);
+                    // log.out("lang: "+lang);
                     Properties lngProperties = new Properties();
                     try {
                         in = new FileInputStream(listOfFiles[i]);
-                        lngProperties.load(new InputStreamReader(in,"UTF8"));
+                        lngProperties.load(new InputStreamReader(in, "UTF8"));
                         in.close();
                         this.language.put(lang.toLowerCase(), lngProperties);
                     } catch (FileNotFoundException e) {
-                        // TODO Auto-generated catch block
+                        log.out("Error: "+e.getMessage());
                         e.printStackTrace();
                     } catch (IOException e) {
-                        // TODO Auto-generated catch block
+                        log.out("Error: "+e.getMessage());
                         e.printStackTrace();
                     }
                 }
             }
         } catch (Exception e) {
-            // TODO: handle exception
+            log.out("Error: "+e.getMessage());
             e.printStackTrace();
         }
 
     }
 
     /**
-     * 
+     *
      * @param key
      * @param lang
      * @return
@@ -75,12 +93,18 @@ public class I18n {
             }
             return lngProperties.getProperty(key, lngDefaultProperties.getProperty(key, key));
         } catch (Exception e) {
+            log.out("Error: "+e.getMessage());
             e.printStackTrace();
             return key;
         }
 
     }
 
+    /**
+     * 
+     * @param key
+     * @return
+     */
     public String get(String key) {
         return this.get(key, defaultLanguage);
     }
