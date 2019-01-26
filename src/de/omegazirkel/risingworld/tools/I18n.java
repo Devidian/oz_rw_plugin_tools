@@ -73,7 +73,20 @@ public class I18n {
             log.out("Error: "+e.getMessage());
             e.printStackTrace();
         }
+    }
 
+    /**
+     * returns the language that is used for the given language
+     * 
+     * @param lang
+     * @return
+     */
+    public String getLanguageUsed(String lang){
+        if (!this.language.containsKey(lang.toLowerCase())) {
+            return defaultLanguage;
+        } else {
+            return lang;
+        }
     }
 
     /**
