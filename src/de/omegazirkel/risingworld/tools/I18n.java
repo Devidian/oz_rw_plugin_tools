@@ -18,7 +18,7 @@ public class I18n {
     private static Logger log = null;
 
     /**
-     * 
+     *
      * @param plugin
      */
     public I18n(Plugin plugin) {
@@ -28,7 +28,7 @@ public class I18n {
     }
 
     /**
-     * 
+     *
      * @param plugin
      * @param logLevel
      */
@@ -61,32 +61,41 @@ public class I18n {
                         in.close();
                         this.language.put(lang.toLowerCase(), lngProperties);
                     } catch (FileNotFoundException e) {
-                        log.out("Error: "+e.getMessage());
+                        log.out("Error: " + e.getMessage());
                         e.printStackTrace();
                     } catch (IOException e) {
-                        log.out("Error: "+e.getMessage());
+                        log.out("Error: " + e.getMessage());
                         e.printStackTrace();
                     }
                 }
             }
         } catch (Exception e) {
-            log.out("Error: "+e.getMessage());
+            log.out("Error: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     /**
      * returns the language that is used for the given language
-     * 
+     *
      * @param lang
      * @return
      */
-    public String getLanguageUsed(String lang){
+    public String getLanguageUsed(String lang) {
         if (!this.language.containsKey(lang.toLowerCase())) {
-            return defaultLanguage;
+            return defaultLanguage + " (default Language)";
         } else {
             return lang;
         }
+    }
+
+    /**
+     *
+     * @return
+     */
+    public String getLanguageAvailable() {
+        String[] keys = this.language.keySet().toArray(new String[0]);
+        return String.join(", ", keys);
     }
 
     /**
@@ -106,7 +115,7 @@ public class I18n {
             }
             return lngProperties.getProperty(key, lngDefaultProperties.getProperty(key, key));
         } catch (Exception e) {
-            log.out("Error: "+e.getMessage());
+            log.out("Error: " + e.getMessage());
             e.printStackTrace();
             return key;
         }
@@ -114,7 +123,7 @@ public class I18n {
     }
 
     /**
-     * 
+     *
      * @param key
      * @return
      */

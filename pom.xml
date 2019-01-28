@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.omegazirkel.risingworld</groupId>
     <artifactId>tools</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
@@ -17,7 +17,7 @@
     <build>
         <sourceDirectory>src</sourceDirectory>
         <directory>target</directory>
-        <finalName>${project.artifactId}-${project.version}</finalName>
+        <finalName>${project.artifactId}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -53,7 +53,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${basedir}/dist/${project.artifactId}</outputDirectory>
+                            <outputDirectory>${basedir}/dist/shared/lib</outputDirectory>
                             <resources>
                                 <!-- <resource>
                                     <directory>/src</directory>
