@@ -1,3 +1,9 @@
+## [unreleased]
+
+
+## [0.4.0] - 2019-01-31
+### Added
+- Colors singleton class to provide streamlined colors for different plugins
 
 ## [0.3.0] - 2019-01-28
 ### Added
