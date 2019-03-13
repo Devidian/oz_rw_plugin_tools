@@ -1,5 +1,8 @@
 ## [unreleased]
 
+## [0.4.1] - 2019-03-05
+### Fixed
+- Colors class getInstance was not static
 
 ## [0.4.0] - 2019-01-31
 ### Added

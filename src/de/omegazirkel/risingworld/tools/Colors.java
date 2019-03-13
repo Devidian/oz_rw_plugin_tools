@@ -19,7 +19,7 @@ public class Colors{
      * 
      * @return
      */
-    public Colors getInstance(){
+    public static Colors getInstance(){
         return C;
     }
 
