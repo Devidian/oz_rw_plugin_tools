@@ -1,5 +1,10 @@
 ## [unreleased]
 
+
+## [0.5.0] - 2019-04-06
+### Added
+- Wrapper class for SQLite Database connection
+
 ## [0.4.1] - 2019-03-05
 ### Fixed
 - Colors class getInstance was not static
