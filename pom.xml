@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.omegazirkel.risingworld</groupId>
 	<artifactId>tools</artifactId>
-	<version>0.5.0</version>
+	<version>0.6.0</version>
 	<packaging>jar</packaging>
 	<dependencies>
 		<dependency>
@@ -71,6 +71,24 @@
 									<directory>${basedir}</directory>
 									<includes>
 										<include>*.md</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+					<execution>
+						<id>copy-resource-two</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${basedir}/dist/shared/assets</outputDirectory>
+							<resources>
+								<resource>
+									<directory>/src/assets</directory>
+									<includes>
+										<include>*.*</include>
 									</includes>
 								</resource>
 							</resources>
