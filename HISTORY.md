@@ -1,5 +1,12 @@
 ## [unreleased]
 
+### Added
+- `gson` maven dependency added
+- `javax.websocket-api` maven dependency added
+- `tyrus-standalone-client` maven dependency added
+- `WSClientEndpoint` helper class (moved from GlobalIntercom)
+- README file
+
 ## [0.6.0] - 2019-04-13
 ### Added
 - Merged Miwarre's rwgui plugin into this lib as drop-in-replacement
