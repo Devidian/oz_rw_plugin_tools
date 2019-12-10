@@ -5,7 +5,7 @@
  */
 package de.omegazirkel.risingworld.tools;
 
-import java.io.IOException;
+// import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutionException;
@@ -50,7 +50,7 @@ public class WSClientEndpoint {
 			@Override
 			public boolean onDisconnect(CloseReason closeReason) {
 				final int i = ++counter;
-				log.out("WebSocket got disconnected: " + closeReason.toString(), 999);
+				log.out("WebSocket got disconnected: " + closeReason.toString(), 911);
 				if (closeReason.getCloseCode() == CloseCodes.CLOSED_ABNORMALLY) {
 					log.out("WebSocket reconnecting... " + i, 0);
 					return true;
@@ -63,7 +63,7 @@ public class WSClientEndpoint {
 			@Override
 			public boolean onConnectFailure(Exception exception) {
 				final int i = ++counter;
-				log.out("WebSocket failed to connect: " + exception.getMessage(), 999);
+				log.out("WebSocket failed to connect: " + exception.getMessage(), 911);
 				// if (i <= 30) {
 				log.out("WebSocket reconnecting... " + i, 0);
 				return true;
@@ -86,7 +86,7 @@ public class WSClientEndpoint {
 			this.session = this.client.asyncConnectToServer(this, this.endpointURI).get();
 			// this.session = this.client.connectToServer(this, this.endpointURI);
 		} catch (DeploymentException | InterruptedException | ExecutionException e) {
-			log.out(e.getMessage(), 999);
+			log.out(e.getMessage(), 911);
 		}
 	}
 
@@ -97,7 +97,7 @@ public class WSClientEndpoint {
 	 */
 	@OnError
 	public void onError(Session session, Throwable t) {
-		log.out(t.toString(), 999);
+		log.out(t.toString(), 911);
 
 	}
 
@@ -121,7 +121,7 @@ public class WSClientEndpoint {
 	public void onClose(Session session, CloseReason reason) {
 		this.session = null;
 		this.isConnected = false;
-		log.out("WebSocket closed: " + reason.toString(), 999);
+		log.out("WebSocket closed: " + reason.toString(), 911);
 
 	}
 

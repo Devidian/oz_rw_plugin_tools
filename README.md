@@ -10,7 +10,7 @@ This is a set of shared classes and jar's used by different Plugins.
 - SQLite DB Initializer (per Plugin)
 
 ## Merged Features
--  Miwarre's rwgui Plugin (now its just a lib not a Plugin) drop in replacement
+- Miwarre's rwgui Plugin (now its just a lib not a Plugin) drop in replacement
 
 ## External libs
 All librarys that were added to this shared lib can be used for all plugins without shipping them included to the plugin.
@@ -27,10 +27,10 @@ Just extract the shared folder into your `plugins` folder. The jar path should l
         │    ├── shared
         │    │    ├── assets...
         │    │    └── lib
-        │    │         ├── gson-2.8.5.jar
+        │    │         ├── gson-2.8.6.jar
         │    │         ├── HISTORY.md
-        │    │         ├── README.md
         │    │         ├── javax.websocket-api-1.1.jar
+        │    │         ├── README.md
         │    │         ├── tools.jar
         │    │         └── tyrus-standalone-client-1.15.jar
         :    :
@@ -121,11 +121,65 @@ public class NewPlugin extends Plugin{
 
 
 ## Plugin-Change-Watcher
-... description coming soon ...
+This static helper class creates 2 new threads to watch the filesystem for changes. To use it you have to implement `FileChangeListener` int your plugin and register your plugin to start watching changes.
+
+### Example code
+```java
+import de.omegazirkel.risingworld.tools.FileChangeListener;
+import de.omegazirkel.risingworld.tools.PluginChangeWatcher;
+
+public class NewPlugin extends Plugin implements FileChangeListener{
+
+    static final de.omegazirkel.risingworld.tools.Logger log = new de.omegazirkel.risingworld.tools.Logger("[MY.Plugin]");
+	static boolean flagRestart = false;
+
+    @Override
+	public void onEnable() {
+
+        // register this plugin for watching changes
+		try {
+			File f = new File(getPath());
+			PluginChangeWatcher.registerFileChangeListener(this, f);
+		} catch (Exception ex) {
+			log.out(ex.toString(), 911);
+		}
+    }
+
+    @Override
+	public void onFileChangeEvent(Path file) {
+		if (file.toString().endsWith("jar")) {
+			if (restartOnUpdate) {
+				Server server = getServer();
+
+				if (server.getPlayerCount() > 0) {
+					flagRestart = true;
+				} else {
+					log.out("onFileCreateEvent: <" + file + "> changed, restarting now (no players online)", 100);
+				}
+
+			} else {
+				log.out("onFileCreateEvent: <" + file + "> changed but restartOnUpdate is false", 0);
+			}
+		} else {
+			log.out("onFileCreateEvent: <" + file + ">", 0);
+		}
+	}
+
+	@Override
+	public void onFileCreateEvent(Path file) {
+		if (file.toString().endsWith("settings.properties")) {
+			// this.initSettings();
+		} else {
+			log.out(file.toString() + " was changed", 0);
+		}
+	}
+
+}
+
+```
 
 ## SQLite helper
 ... description coming soon ...
 
 ## WebSocket
 ... description coming soon ...
-

@@ -7,6 +7,7 @@ package de.omegazirkel.risingworld.tools;
 
 import java.io.File;
 import java.io.IOException;
+// import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
@@ -25,47 +26,73 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class PluginChangeWatcher {
 
-    private final WatchService watcher;
-    private final Map<WatchKey, Path> keyPaths = new ConcurrentHashMap<WatchKey, Path>();
-    private volatile Thread processingThread;
-    private final FileChangeListener fcl;
+    private static WatchService watcher = null;
+    private static final Map<WatchKey, Path> keyPaths = new ConcurrentHashMap<WatchKey, Path>();
+    private static final Map<WatchKey, FileChangeListener> keyListener = new ConcurrentHashMap<WatchKey, FileChangeListener>();
+    private static volatile Thread processingThread;
     private static final Logger log = new Logger("[OZ.Tools]");
 
     /**
-     *
-     * @param fcl
-     * @throws IOException
+     * 
+     * @param flc
+     * @param dir
+     * @return
      */
-    public PluginChangeWatcher(FileChangeListener fcl) throws IOException {
-        this.fcl = fcl;
-        this.watcher = FileSystems.getDefault().newWatchService();
-        log.out("Start WatchUpdates");
+    public static WatchKey registerFileChangeListener(final FileChangeListener flc, final File dir) {
+        initListenerThread();
+        // register
+        try {
+            final Path p = dir.toPath();
+            log.out("register " + p);
+            final WatchKey key = p.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+            keyPaths.put(key, p);
+            keyListener.put(key, flc);
+            return key;
+        } catch (Exception e) {
+            log.out("registerFileChangeListener-> " + e.toString(), 911);
+        }
+        return null;
     }
 
     /**
-     *
+     * 
+     * @param key
      */
-    public void startListening() {
-        processingThread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    processFileNotifications();
-                } catch (InterruptedException ex) {
-                    log.out("Exception: " + ex.getMessage());
-                    processingThread = null;
+    public static void unregisterFileChangeListener(final WatchKey key) {
+        keyPaths.remove(key);
+        keyListener.remove(key);
+    }
+
+    /**
+     * 
+     */
+    public static void initListenerThread() {
+        if (processingThread == null) {
+            processingThread = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        Thread.currentThread().setName("ChangeWatcher");
+                        processFileNotifications();
+                    } catch (final InterruptedException ex) {
+                        log.out("processingThread-> " + ex.toString());
+                        processingThread = null;
+                    } catch (IOException e) {
+                        log.out("processingThread-> " + e.toString());
+                        processingThread = null;
+                    }
                 }
-            }
-        };
+            };
 
-        processingThread.start();
+            processingThread.start();
+        }
     }
 
     /**
      *
      */
-    public void shutDownListener() {
-        Thread thr = processingThread;
+    public static void shutDownListener() {
+        final Thread thr = processingThread;
         if (thr != null) {
             thr.interrupt();
         }
@@ -73,45 +100,45 @@ public class PluginChangeWatcher {
 
     /**
      *
-     * @param dir
+     * @throws InterruptedException
      * @throws IOException
      */
-    public void watchDir(File dir) throws IOException {
-        Path p = dir.toPath();
-        log.out("register " + p);
-        WatchKey key = p.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-        keyPaths.put(key, p);
-    }
-
-    /**
-     *
-     * @throws InterruptedException
-     */
-    private void processFileNotifications() throws InterruptedException {
+    private static void processFileNotifications() throws InterruptedException, IOException {
         while (true) {
-            WatchKey key = watcher.take();
-            Path dir = (Path) keyPaths.get(key);
-            key.pollEvents().forEach((evt) -> {
-                WatchEvent.Kind eventType = evt.kind();
-                if (!(eventType == OVERFLOW)) {
-                    Object o = evt.context();
-                    if (o instanceof Path) {
-                        Path path = (Path) o;
-                        process(dir, path, eventType);
+            if (watcher == null) {
+                watcher = FileSystems.getDefault().newWatchService();
+                log.out("Start WatchUpdates");
+            }
+            final WatchKey key = watcher.take();
+            if (keyPaths.containsKey(key) && keyListener.containsKey(key)) {
+
+                final Path dir = (Path) keyPaths.get(key);
+                final FileChangeListener fcl = (FileChangeListener) keyListener.get(key);
+                key.pollEvents().forEach((evt) -> {
+                    final WatchEvent.Kind<?> eventType = evt.kind();
+                    if (!(eventType == OVERFLOW)) {
+                        final Object o = evt.context();
+                        if (o instanceof Path) {
+                            final Path path = (Path) o;
+                            process(dir, path, eventType, fcl);
+                        }
                     }
-                }
-            });
+                });
+            }
             key.reset();
+
         }
     }
 
     /**
-     *
+     * 
      * @param dir
      * @param file
      * @param evtType
+     * @param fcl
      */
-    private void process(Path dir, Path file, WatchEvent.Kind evtType) {
+    private static void process(final Path dir, final Path file, final WatchEvent.Kind<?> evtType,
+            final FileChangeListener fcl) {
         if (evtType == ENTRY_MODIFY) {
             fcl.onFileChangeEvent(file);
         }

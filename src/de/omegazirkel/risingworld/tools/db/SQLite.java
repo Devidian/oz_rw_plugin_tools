@@ -16,7 +16,7 @@ public class SQLite {
     private Database db = null;
 
     /**
-     * 
+     *
      * @param plugin
      */
     public SQLite(Plugin plugin) {
@@ -26,7 +26,7 @@ public class SQLite {
     }
 
     /**
-     * 
+     *
      * @param plugin
      * @param logLevel
      */
@@ -44,23 +44,44 @@ public class SQLite {
         }
     }
 
+    public Database getRawDatabase() {
+        return db;
+    }
+
     public ResultSet executeQuery(String query) throws SQLException {
         initDatabase();
-        return db.executeQuery(query);
+        try {
+            return db.executeQuery(query);
+        } catch (Exception e) {
+            log.out(e.getMessage(), 911);
+        }
+        return null;
     }
 
     public void executeUpdate(String query) {
         initDatabase();
-        db.executeUpdate(query);
+        try {
+            db.executeUpdate(query);
+        } catch (Exception e) {
+            log.out(e.getMessage(), 911);
+        }
     }
 
     public void execute(String query) {
         initDatabase();
-        db.execute(query);
+        try {
+            db.execute(query);
+        } catch (Exception e) {
+            log.out(e.getMessage(), 911);
+        }
     }
 
     public void destroy() {
-        db.close();
-        db = null;
+        try {
+            db.close();
+            db = null;
+        } catch (Exception e) {
+            log.out(e.getMessage(), 911);
+        }
     }
 }
