@@ -5,6 +5,7 @@ import java.sql.SQLException;
 
 import de.omegazirkel.risingworld.tools.Logger;
 import net.risingworld.api.Plugin;
+import net.risingworld.api.World;
 import net.risingworld.api.database.Database;
 
 /**
@@ -38,7 +39,7 @@ public class SQLite {
 
     private void initDatabase() {
         if (db == null) {
-            String path = plugin.getPath() + "/" + plugin.getWorld().getName() + ".db";
+            String path = plugin.getPath() + "/" + World.getName() + ".db";
             db = plugin.getSQLiteConnection(path);
             log.out("Connected to " + path, 0);
         }

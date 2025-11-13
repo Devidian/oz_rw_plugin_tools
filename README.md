@@ -1,7 +1,9 @@
 # OZTools (shared library)
+
 This is a set of shared classes and jar's used by different Plugins.
 
 ## Core Features
+
 - Plugin Translation (i18n)
 - Logger for console output
 - Plugin-Change-Watcher for watching file changes in the Plugin folder
@@ -10,15 +12,19 @@ This is a set of shared classes and jar's used by different Plugins.
 - SQLite DB Initializer (per Plugin)
 
 ## Merged Features
+
 - Miwarre's rwgui Plugin (now its just a lib not a Plugin) drop in replacement
 
 ## External libs
+
 All librarys that were added to this shared lib can be used for all plugins without shipping them included to the plugin.
+
 - GSON
 - javax.websocket-api
 - tyrus-standalone-client
 
-# Installation
+## Installation
+
 Just extract the shared folder into your `plugins` folder. The jar path should look like `plugins/shared/lib/tools.jar`
 
 ```css
@@ -36,11 +42,13 @@ Just extract the shared folder into your `plugins` folder. The jar path should l
         :    :
 ```
 
-# Feature details/examples
+## Feature details/examples
 
 ## Plugin translation (i18n)
+
 This feature can be used to translate your plugin based on the current users language. Every player will see the plugin in his system language as long as the translation file exists.
-### Integration:
+
+### Integration
 
 ```java
 import de.omegazirkel.risingworld.tools.I18n;
@@ -66,21 +74,24 @@ public class NewPlugin extends Plugin{
 }
 ```
 
-### Translation files:
-```
+### Translation files
+
+```bash
 _/plugins/YourPluigin/i18n/en.properties
 _/plugins/YourPluigin/i18n/de.properties
 _/plugins/YourPluigin/i18n/__anyotherlanguage__.properties
 
 ```
 
-### Example File content:
+### Example File content
+
 ```bash
 MSG_PLUGIN_WELCOME=This Server uses [#F00000]NewPlugin[#FFFFFF] Plugin.\n\
 Type [#997d4a]/np help[#FFFFFF] in chat for help.
 ```
 
 ## Logger
+
 This feature is for logging stuff to your (server) game console, you can send messages to the logger with different levels. If your plugin has a settings file you can then change logging level for your needs. It will always prepend your plugin-log-tag in front of each message so you can see which message is sent from your plugin.
 
 ```java
@@ -99,6 +110,7 @@ public class NewPlugin extends Plugin{
 ```
 
 ## Colors
+
 This is just a singleton class that holds some color values. The idea behind this is to have a default set of colors for the same stuff in different plugins (and not each plugin having its own colors for errors, warnings, infos, etc.)
 
 ```java
@@ -118,12 +130,12 @@ public class NewPlugin extends Plugin{
 }
 ```
 
-
-
 ## Plugin-Change-Watcher
+
 This static helper class creates 2 new threads to watch the filesystem for changes. To use it you have to implement `FileChangeListener` int your plugin and register your plugin to start watching changes.
 
 ### Example code
+
 ```java
 import de.omegazirkel.risingworld.tools.FileChangeListener;
 import de.omegazirkel.risingworld.tools.PluginChangeWatcher;
@@ -179,7 +191,9 @@ public class NewPlugin extends Plugin implements FileChangeListener{
 ```
 
 ## SQLite helper
+
 ... description coming soon ...
 
 ## WebSocket
+
 ... description coming soon ...
