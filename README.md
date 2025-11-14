@@ -86,8 +86,8 @@ _/plugins/YourPluigin/i18n/__anyotherlanguage__.properties
 ### Example File content
 
 ```bash
-MSG_PLUGIN_WELCOME=This Server uses [#F00000]NewPlugin[#FFFFFF] Plugin.\n\
-Type [#997d4a]/np help[#FFFFFF] in chat for help.
+MSG_PLUGIN_WELCOME=This Server uses <color=#F00000>NewPlugin</color> Plugin.\n\
+Type <color=#997d4a>/np help</color> in chat for help.
 ```
 
 ## Logger

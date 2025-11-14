@@ -2,8 +2,15 @@
 
 ## [unreleased]
 
+## [0.8.1] - 2025-11-14
+
+- refactor: changed color codes to new format
+
+## [0.8.0] - 2025-11-13
+
 - refactor: updated and build for unity
   - removed rwgui
+  - removed assets (rwgui assets)
 
 ## [0.7.0] - 2019-12-10
 

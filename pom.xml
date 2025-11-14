@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.omegazirkel.risingworld</groupId>
 	<artifactId>tools</artifactId>
-	<version>0.8.0</version>
+	<version>0.8.1</version>
 	<packaging>jar</packaging>
 	<dependencies>
 		<!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
@@ -18,7 +18,6 @@
 			<groupId>jakarta.websocket</groupId>
 			<artifactId>jakarta.websocket-api</artifactId>
 			<version>2.2.0</version>
-			<scope>provided</scope>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.glassfish.tyrus.bundles/tyrus-standalone-client -->
 		<dependency>
@@ -29,9 +28,8 @@
 		<dependency>
 			<groupId>net.risingworld</groupId>
 			<artifactId>PluginAPI</artifactId>
-			<version>0.9.0</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/../libs/PluginAPI.jar</systemPath>
+			<version>1.0.0</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 	<build>
@@ -39,9 +37,49 @@
 		<directory>target</directory>
 		<finalName>${project.artifactId}</finalName>
 		<plugins>
+			<!-- clear shared directory -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>3.3.2</version>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>${project.basedir}/dist/shared</directory>
+							<includes>
+								<include>**/*</include>
+							</includes>
+						</fileset>
+					</filesets>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-install-plugin</artifactId>
+				<version>3.1.1</version>
+				<executions>
+					<execution>
+						<id>install-local</id>
+						<phase>install</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<file>${project.build.directory}/${project.build.finalName}.jar</file>
+							<groupId>de.omegazirkel</groupId>
+							<artifactId>${project.build.finalName}</artifactId>
+							<version>${project.version}</version>
+							<packaging>jar</packaging>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.4.2</version>
 				<configuration>
 					<archive>
 						<manifest>
@@ -59,9 +97,9 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.11.0</version>
 				<configuration>
-					<release>21</release>
-					<source>21</source>
-					<target>21</target>
+					<release>20</release>
+					<source>20</source>
+					<target>20</target>
 				</configuration>
 			</plugin>
 
@@ -80,7 +118,7 @@
 						<configuration>
 							<outputDirectory>${basedir}/dist/shared/lib</outputDirectory>
 							<excludeTypes>pom</excludeTypes>
-							<excludeScope>system</excludeScope>
+							<excludeScope>provided</excludeScope>
 							<overWriteReleases>false</overWriteReleases>
 							<overWriteSnapshots>false</overWriteSnapshots>
 							<overWriteIfNewer>true</overWriteIfNewer>
@@ -93,7 +131,7 @@
 			<!-- Resource copying -->
 			<plugin>
 				<artifactId>maven-resources-plugin</artifactId>
-				<version>2.7</version>
+				<version>3.3.1</version>
 				<executions>
 					<execution>
 						<id>copy-resource-one</id>
@@ -111,7 +149,7 @@
                                     </includes>
                                 </resource> -->
 								<resource>
-									<directory>/target</directory>
+									<directory>${basedir}/target</directory>
 									<includes>
 										<include>*.jar</include>
 									</includes>
@@ -135,7 +173,7 @@
 							<outputDirectory>${basedir}/dist/shared/assets</outputDirectory>
 							<resources>
 								<resource>
-									<directory>/src/assets</directory>
+									<directory>${basedir}/src/assets</directory>
 									<includes>
 										<include>*.*</include>
 									</includes>
@@ -145,10 +183,37 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.6.0</version>
+				<executions>
+					<execution>
+						<id>zip-dist-shared</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<appendAssemblyId>false</appendAssemblyId>
+							<finalName>shared-${project.version}</finalName>
+
+							<!-- Important: Inline descriptor -->
+							<descriptors>
+								<descriptor>src/assembly/shared.xml</descriptor>
+							</descriptors>
+
+							<outputDirectory>${project.basedir}/dist</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.release>21</maven.compiler.release>
+		<maven.compiler.source>20</maven.compiler.source>
+		<maven.compiler.target>20</maven.compiler.target>
 	</properties>
 </project>
