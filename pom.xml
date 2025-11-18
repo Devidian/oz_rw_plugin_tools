@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.omegazirkel.risingworld</groupId>
 	<artifactId>tools</artifactId>
-	<version>0.8.1</version>
+	<version>0.8.2</version>
 	<packaging>jar</packaging>
 	<dependencies>
 		<!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
@@ -25,12 +25,28 @@
 			<artifactId>tyrus-standalone-client</artifactId>
 			<version>2.2.0</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>2.23.1</version>
+			<scope>compile</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.23.1</version>
+			<scope>compile</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>net.risingworld</groupId>
 			<artifactId>PluginAPI</artifactId>
 			<version>1.0.0</version>
 			<scope>provided</scope>
 		</dependency>
+
 	</dependencies>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
@@ -56,6 +72,48 @@
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.4.1</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<shadedArtifactAttached>false</shadedArtifactAttached>
+							<createDependencyReducedPom>false</createDependencyReducedPom>
+							<!-- exclude log4j so it is NOT shaded -->
+							<!-- <artifactSet>
+								<excludes>
+									<exclude>org.apache.logging.log4j:log4j-api</exclude>
+									<exclude>org.apache.logging.log4j:log4j-core</exclude>
+
+									<exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
+									<exclude>org.apache.logging.log4j:log4j-simple</exclude>
+									<exclude>org.apache.logging.log4j:log4j-jul</exclude>
+									<exclude>org.apache.logging.log4j:log4j-iostreams</exclude>
+								</excludes>
+							</artifactSet> -->
+
+							<!-- only log4j-api and log4j-core relocation -->
+							<!-- <relocations>
+								<relocation>
+									<pattern>org.apache.logging.log4j</pattern>
+									<shadedPattern>${project.groupId}.${project.artifactId}.shaded.log4j</shadedPattern>
+								</relocation>
+							</relocations> -->
+							<transformers>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+							</transformers>
+
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-install-plugin</artifactId>
 				<version>3.1.1</version>
 				<executions>
@@ -67,29 +125,13 @@
 						</goals>
 						<configuration>
 							<file>${project.build.directory}/${project.build.finalName}.jar</file>
-							<groupId>de.omegazirkel</groupId>
+							<groupId>${project.groupId}</groupId>
 							<artifactId>${project.build.finalName}</artifactId>
 							<version>${project.version}</version>
 							<packaging>jar</packaging>
 						</configuration>
 					</execution>
 				</executions>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.4.2</version>
-				<configuration>
-					<archive>
-						<manifest>
-							<addClasspath>true</addClasspath>
-						</manifest>
-						<manifestEntries>
-							<Class-Path>gson-2.8.5.jar javax.websocket-api-1.1.jar tyrus-standalone-client-1.15.jar</Class-Path>
-						</manifestEntries>
-					</archive>
-				</configuration>
 			</plugin>
 
 			<plugin>
@@ -103,30 +145,51 @@
 				</configuration>
 			</plugin>
 
-			<!-- Dependency copying -->
-			<plugin>
+			
+            <!-- <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Class-Path>./lib/log4j-api-2.23.1.jar</Class-Path>
+                            <Class-Path>./lib/log4j-core-2.23.1.jar</Class-Path>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin> -->
+
+			<!-- <plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
-				<version>3.1.1</version>
+				<version>3.5.0</version>
 				<executions>
 					<execution>
-						<id>copy-dependencies</id>
+						<id>copy-log4j</id>
 						<phase>package</phase>
 						<goals>
-							<goal>copy-dependencies</goal>
+							<goal>copy</goal>
 						</goals>
 						<configuration>
-							<outputDirectory>${basedir}/dist/shared/lib</outputDirectory>
-							<excludeTypes>pom</excludeTypes>
-							<excludeScope>provided</excludeScope>
-							<overWriteReleases>false</overWriteReleases>
-							<overWriteSnapshots>false</overWriteSnapshots>
-							<overWriteIfNewer>true</overWriteIfNewer>
-							<excludeTransitive>false</excludeTransitive>
+							<artifactItems>
+								<artifactItem>
+									<groupId>org.apache.logging.log4j</groupId>
+									<artifactId>log4j-api</artifactId>
+									<version>2.23.1</version>
+									<outputDirectory>${basedir}/dist/shared/lib</outputDirectory>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.apache.logging.log4j</groupId>
+									<artifactId>log4j-core</artifactId>
+									<version>2.23.1</version>
+									<outputDirectory>${basedir}/dist/shared/lib</outputDirectory>
+								</artifactItem>
+							</artifactItems>
 						</configuration>
 					</execution>
 				</executions>
-			</plugin>
+			</plugin> -->
 
 			<!-- Resource copying -->
 			<plugin>
@@ -134,7 +197,7 @@
 				<version>3.3.1</version>
 				<executions>
 					<execution>
-						<id>copy-resource-one</id>
+						<id>copy-tools</id>
 						<phase>package</phase>
 						<goals>
 							<goal>copy-resources</goal>
@@ -142,18 +205,24 @@
 						<configuration>
 							<outputDirectory>${basedir}/dist/shared/lib</outputDirectory>
 							<resources>
-								<!-- <resource>
-                                    <directory>/src</directory>
-                                    <includes>
-                                        <include>*.properties</include>
-                                    </includes>
-                                </resource> -->
 								<resource>
 									<directory>${basedir}/target</directory>
 									<includes>
-										<include>*.jar</include>
+										<include>${project.build.finalName}.jar</include>
 									</includes>
 								</resource>
+							</resources>
+						</configuration>
+					</execution>
+					<execution>
+						<id>copy-markdown</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${basedir}/dist/shared</outputDirectory>
+							<resources>
 								<resource>
 									<directory>${basedir}</directory>
 									<includes>
@@ -164,7 +233,7 @@
 						</configuration>
 					</execution>
 					<execution>
-						<id>copy-resource-two</id>
+						<id>copy-assets</id>
 						<phase>package</phase>
 						<goals>
 							<goal>copy-resources</goal>

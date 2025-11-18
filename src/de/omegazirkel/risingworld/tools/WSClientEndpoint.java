@@ -28,7 +28,9 @@ import org.glassfish.tyrus.client.ClientProperties;
 @ClientEndpoint
 public class WSClientEndpoint {
 
-	private static final Logger log = new Logger("[OZ.Tools]");
+	public static OZLogger logger() {
+        return OZLogger.getInstance("OZ.Tools.WSClientEndpoint");
+    }
 
 	public Session session = null;
 	public boolean isConnected = false;
@@ -50,12 +52,12 @@ public class WSClientEndpoint {
 			@Override
 			public boolean onDisconnect(CloseReason closeReason) {
 				final int i = ++counter;
-				log.out("WebSocket got disconnected: " + closeReason.toString(), 911);
+				logger().out("WebSocket got disconnected: " + closeReason.toString(), 911);
 				if (closeReason.getCloseCode() == CloseCodes.CLOSED_ABNORMALLY) {
-					log.out("WebSocket reconnecting... " + i, 0);
+					logger().out("WebSocket reconnecting... " + i, 0);
 					return true;
 				} else {
-					log.out("WebSocket not reconnecting.", 0);
+					logger().out("WebSocket not reconnecting.", 0);
 					return false;
 				}
 			}
@@ -63,10 +65,10 @@ public class WSClientEndpoint {
 			@Override
 			public boolean onConnectFailure(Exception exception) {
 				final int i = ++counter;
-				log.out("WebSocket failed to connect: " + exception.getMessage(), 911);
+				logger().out("WebSocket failed to connect: " + exception.getMessage(), 911);
 				// if (i <= 30) {
-				log.out("WebSocket reconnecting... " + i, 0);
-				return true;
+				logger().out("WebSocket reconnecting... " + i, 0);
+				return i < 10;
 				// } else {
 				// log.out("WebSocket not reconnecting.", 0);
 				// return false;
@@ -82,11 +84,11 @@ public class WSClientEndpoint {
 	 */
 	protected void connect() {
 		try {
-			log.out("WebSocket connecting to " + this.endpointURI, 0);
+			logger().out("WebSocket connecting to " + this.endpointURI, 0);
 			this.session = this.client.asyncConnectToServer(this, this.endpointURI).get();
 			// this.session = this.client.connectToServer(this, this.endpointURI);
 		} catch (DeploymentException | InterruptedException | ExecutionException e) {
-			log.out(e.getMessage(), 911);
+			logger().out(e.getMessage(), 911);
 		}
 	}
 
@@ -97,7 +99,7 @@ public class WSClientEndpoint {
 	 */
 	@OnError
 	public void onError(Session session, Throwable t) {
-		log.out(t.toString(), 911);
+		logger().out(t.toString(), 911);
 
 	}
 
@@ -109,7 +111,7 @@ public class WSClientEndpoint {
 	public void onOpen(Session session) {
 		this.session = session;
 		this.isConnected = true;
-		log.out("WebSocket connected!", 0);
+		logger().out("WebSocket connected!", 0);
 	}
 
 	/**
@@ -121,7 +123,7 @@ public class WSClientEndpoint {
 	public void onClose(Session session, CloseReason reason) {
 		this.session = null;
 		this.isConnected = false;
-		log.out("WebSocket closed: " + reason.toString(), 911);
+		logger().out("WebSocket closed: " + reason.toString(), 911);
 
 	}
 
@@ -135,7 +137,7 @@ public class WSClientEndpoint {
 		if (this.messageHandler != null) {
 			this.messageHandler.handleMessage(message);
 		} else {
-			log.out("No messageHandler for message: " + message, 0);
+			logger().out("No messageHandler for message: " + message, 0);
 		}
 	}
 
@@ -148,7 +150,7 @@ public class WSClientEndpoint {
 		if (this.messageHandler != null) {
 			this.messageHandler.handleBinaryMessage(buffer);
 		} else {
-			log.out("No messageHandler for buffer: " + buffer.length, 0);
+			logger().out("No messageHandler for buffer: " + buffer.length, 0);
 		}
 	}
 
@@ -178,7 +180,7 @@ public class WSClientEndpoint {
 			// before the data get sent to the WS Server.
 			this.session.getAsyncRemote().sendBinary(ByteBuffer.wrap(buffer.array().clone())).get();
 		} catch (InterruptedException | ExecutionException e) {
-			log.out("Error on sendBinaryMessage: " + e.getMessage(), 911);
+			logger().out("Error on sendBinaryMessage: " + e.getMessage(), 911);
 		}
 	}
 

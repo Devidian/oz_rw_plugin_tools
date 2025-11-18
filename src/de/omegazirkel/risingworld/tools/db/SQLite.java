@@ -3,7 +3,7 @@ package de.omegazirkel.risingworld.tools.db;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import de.omegazirkel.risingworld.tools.Logger;
+import de.omegazirkel.risingworld.tools.OZLogger;
 import net.risingworld.api.Plugin;
 import net.risingworld.api.World;
 import net.risingworld.api.database.Database;
@@ -13,8 +13,10 @@ import net.risingworld.api.database.Database;
  */
 public class SQLite {
     private Plugin plugin = null;
-    private Logger log = null;
     private Database db = null;
+	public static OZLogger logger() {
+        return OZLogger.getInstance("OZ.Tools.i18n");
+    }
 
     /**
      *
@@ -22,7 +24,6 @@ public class SQLite {
      */
     public SQLite(Plugin plugin) {
         this.plugin = plugin;
-        log = new Logger("[OZ.SQLite]", 0);
         initDatabase();
     }
 
@@ -33,7 +34,6 @@ public class SQLite {
      */
     public SQLite(Plugin plugin, int logLevel) {
         this.plugin = plugin;
-        log = new Logger("[OZ.SQLite]", logLevel);
         initDatabase();
     }
 
@@ -41,7 +41,7 @@ public class SQLite {
         if (db == null) {
             String path = plugin.getPath() + "/" + World.getName() + ".db";
             db = plugin.getSQLiteConnection(path);
-            log.out("Connected to " + path, 0);
+            logger().out("Connected to " + path, 0);
         }
     }
 
@@ -54,7 +54,7 @@ public class SQLite {
         try {
             return db.executeQuery(query);
         } catch (Exception e) {
-            log.out(e.getMessage(), 911);
+            logger().out(e.getMessage(), 911);
         }
         return null;
     }
@@ -64,7 +64,7 @@ public class SQLite {
         try {
             db.executeUpdate(query);
         } catch (Exception e) {
-            log.out(e.getMessage(), 911);
+            logger().out(e.getMessage(), 911);
         }
     }
 
@@ -73,7 +73,7 @@ public class SQLite {
         try {
             db.execute(query);
         } catch (Exception e) {
-            log.out(e.getMessage(), 911);
+            logger().out(e.getMessage(), 911);
         }
     }
 
@@ -82,7 +82,7 @@ public class SQLite {
             db.close();
             db = null;
         } catch (Exception e) {
-            log.out(e.getMessage(), 911);
+            logger().out(e.getMessage(), 911);
         }
     }
 }

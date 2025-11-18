@@ -30,7 +30,10 @@ public class PluginChangeWatcher {
     private static final Map<WatchKey, Path> keyPaths = new ConcurrentHashMap<WatchKey, Path>();
     private static final Map<WatchKey, FileChangeListener> keyListener = new ConcurrentHashMap<WatchKey, FileChangeListener>();
     private static volatile Thread processingThread;
-    private static final Logger log = new Logger("[OZ.Tools]");
+    
+	public static OZLogger logger() {
+        return OZLogger.getInstance("OZ.Tools.ChangeWatcher");
+    }
 
     /**
      * 
@@ -43,13 +46,13 @@ public class PluginChangeWatcher {
         // register
         try {
             final Path p = dir.toPath();
-            log.out("register " + p);
+            logger().out("register " + p);
             final WatchKey key = p.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
             keyPaths.put(key, p);
             keyListener.put(key, flc);
             return key;
         } catch (Exception e) {
-            log.out("registerFileChangeListener-> " + e.toString(), 911);
+            logger().out("registerFileChangeListener-> " + e.toString(), 911);
         }
         return null;
     }
@@ -75,10 +78,10 @@ public class PluginChangeWatcher {
                         Thread.currentThread().setName("ChangeWatcher");
                         processFileNotifications();
                     } catch (final InterruptedException ex) {
-                        log.out("processingThread-> " + ex.toString());
+                        logger().out("processingThread-> " + ex.toString());
                         processingThread = null;
                     } catch (IOException e) {
-                        log.out("processingThread-> " + e.toString());
+                        logger().out("processingThread-> " + e.toString());
                         processingThread = null;
                     }
                 }
@@ -107,7 +110,7 @@ public class PluginChangeWatcher {
         while (true) {
             if (watcher == null) {
                 watcher = FileSystems.getDefault().newWatchService();
-                log.out("Start WatchUpdates");
+                logger().out("Start WatchUpdates");
             }
             final WatchKey key = watcher.take();
             if (keyPaths.containsKey(key) && keyListener.containsKey(key)) {
