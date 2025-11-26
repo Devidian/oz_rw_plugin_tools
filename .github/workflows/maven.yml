@@ -42,7 +42,7 @@ jobs:
 
       - name: Install Rising World PluginAPI locally
         run: >
-          mvn -B install:install-file
+          mvn -U -B install:install-file
           -Dfile=libs/PluginAPI.jar
           -DgroupId=net.risingworld
           -DartifactId=PluginAPI

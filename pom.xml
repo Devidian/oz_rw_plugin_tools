@@ -1,12 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+            http://maven.apache.org/POM/4.0.0
+            https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>de.omegazirkel.risingworld</groupId>
 	<artifactId>Tools</artifactId>
-	<version>0.9.0</version>
-	<packaging>jar</packaging>
+	<!-- set by CI workflow -->
+	<version>0.0.0</version>
+
+	<name>OZTools</name>
+
+	<!-- GitHub Packages publishing target -->
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>GitHub Packages</name>
+			<url>https://maven.pkg.github.com/Devidian/oz_rw_plugin_tools</url>
+		</repository>
+	</distributionManagement>
 
 	<!-- Repositories -->
 	<repositories>
@@ -20,14 +34,6 @@
 			<url>https://jitpack.io</url>
 		</repository>
 	</repositories>
-
-	<distributionManagement>
-		<repository>
-			<id>github</id>
-			<name>GitHub Packages</name>
-			<url>https://maven.pkg.github.com/Devidian/oz_rw_plugin_tools</url>
-		</repository>
-	</distributionManagement>
 
 	<dependencies>
 
@@ -116,6 +122,17 @@
 		<sourceDirectory>src</sourceDirectory>
 		<directory>target</directory>
 		<finalName>OZ-${project.artifactId}</finalName>
+
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-install-plugin</artifactId>
+					<version>3.1.1</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+
 
 		<resources>
 			<resource>
