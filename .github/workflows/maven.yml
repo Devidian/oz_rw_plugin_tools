@@ -22,6 +22,6 @@ jobs:
         cache: maven
 
     - name: Build with Maven
-      # Dieser Befehl führt den kompletten Build durch.
-      # Die 'validate'-Phase wird automatisch aufgerufen und installiert die API.
-      run: mvn -B package --file pom.xml
+      run: >
+        mvn -B install:install-file -Dfile=libs/PluginAPI.jar -DgroupId=net.risingworld -DartifactId=PluginAPI -Dversion=1.0.0 -Dpackaging=jar &&
+        mvn -B package --file pom.xml
