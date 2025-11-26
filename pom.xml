@@ -194,7 +194,7 @@
 				<executions>
 					<execution>
 						<id>copy-dependencies</id>
-						<phase>package</phase>
+						<phase>prepare-package</phase>
 						<goals>
 							<goal>copy-dependencies</goal>
 						</goals>
@@ -216,7 +216,7 @@
 				<executions>
 					<execution>
 						<id>copy-tools</id>
-						<phase>package</phase>
+						<phase>prepare-package</phase>
 						<goals>
 							<goal>copy-resources</goal>
 						</goals>
@@ -234,7 +234,7 @@
 					</execution>
 					<execution>
 						<id>copy-markdown</id>
-						<phase>package</phase>
+						<phase>prepare-package</phase>
 						<goals>
 							<goal>copy-resources</goal>
 						</goals>
@@ -252,7 +252,7 @@
 					</execution>
 					<execution>
 						<id>copy-settings</id>
-						<phase>package</phase>
+						<phase>prepare-package</phase>
 						<goals>
 							<goal>copy-resources</goal>
 						</goals>
@@ -270,7 +270,7 @@
 					</execution>
 					<execution>
 						<id>copy-assets</id>
-						<phase>package</phase>
+						<phase>prepare-package</phase>
 						<goals>
 							<goal>copy-resources</goal>
 						</goals>
