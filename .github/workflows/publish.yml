@@ -1,0 +1,51 @@
+name: Publish Tools to GitHub Packages
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        run: |
+          VERSION="${GITHUB_REF##*/}"
+          VERSION="${VERSION#v}"
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+      - name: Patch pom.xml version (tag -> pom)
+        run: |
+          if [ -n "${VERSION}" ]; then
+            # replace first occurrence of <version>...</version> under project
+            sed -i "0,/<version>.*<\/version>/s//<version>${VERSION}<\/version>/" pom.xml
+          fi
+
+      - name: Set up JDK 20 and configure Maven server for GitHub Packages
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '20'
+          cache: maven
+          server-id: github
+          server-username: ${{ github.actor }}
+          server-password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Deploy
+        run: mvn -B -DskipTests deploy
+
+      - name: Create GitHub Release (attach dist zip)
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "dist/*.zip"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
