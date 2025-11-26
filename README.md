@@ -11,34 +11,39 @@ This is a set of shared classes and jar's used by different Plugins.
 - WebSocket Client
 - SQLite DB Initializer (per Plugin)
 
-## Merged Features
-
-- Miwarre's rwgui Plugin (now its just a lib not a Plugin) drop in replacement
-
 ## External libs
 
-All librarys that were added to this shared lib can be used for all plugins without shipping them included to the plugin.
+All librarys that were added to this plugin can be used for all plugins without shipping them included to the plugin.
 
 - GSON
-- javax.websocket-api
-- tyrus-standalone-client
+- jakarta.websocket-api
+- jakarta.websocket-client-api
+- tyrus-container-grizzly-client
+- log4j-api
+- log4j-core
+- httpclient5
+- httpclient5-fluent
+- json-simple
+- javacord
 
 ## Installation
 
-Just extract the shared folder into your `plugins` folder. The jar path should look like `plugins/shared/lib/tools.jar`
+Just extract the shared folder into your `Plugins` folder. The jar path should look like `Plugins/Tools/OZ-Tools.jar`
 
 ```css
     ── RisingWorld
-        ├── plugins
-        │    ├── shared
+        ├── Plugins
+        │    ├── Tools
         │    │    ├── assets...
-        │    │    └── lib
-        │    │         ├── gson-2.8.6.jar
-        │    │         ├── HISTORY.md
-        │    │         ├── javax.websocket-api-1.1.jar
-        │    │         ├── README.md
-        │    │         ├── tools.jar
-        │    │         └── tyrus-standalone-client-1.15.jar
+        │    │    ├── lib
+        │    │    │    ├── gson-2.8.6.jar
+        │    │    │    ├── javax.websocket-api-1.1.jar
+        │    │    │    └── tyrus-standalone-client-1.15.jar
+        │    │    ├── HISTORY.md
+        │    │    ├── README.md
+        │    │    ├── OZ-Tools.jar
+        │    │    └── settings.properties
+
         :    :
 ```
 
@@ -58,28 +63,28 @@ public class NewPlugin extends Plugin{
     // Init
     private static I18n t = null;
     @Override
-	public void onEnable() {
-		t = t != null ? t : new I18n(this);
+    public void onEnable() {
+        t = t != null ? t : new I18n(this);
     }
 
     // Usage example
     @EventMethod
-	public void onPlayerSpawn(PlayerSpawnEvent event) {
-		if (sendPluginWelcome) {
-			Player player = event.getPlayer();
-			String lang = player.getSystemLanguage();
-			player.sendTextMessage(t.get("MSG_PLUGIN_WELCOME", lang));
-		}
-	}
+    public void onPlayerSpawn(PlayerSpawnEvent event) {
+        if (sendPluginWelcome) {
+            Player player = event.getPlayer();
+            String lang = player.getSystemLanguage();
+            player.sendTextMessage(t.get("MSG_PLUGIN_WELCOME", lang));
+        }
+    }
 }
 ```
 
 ### Translation files
 
 ```bash
-_/plugins/YourPluigin/i18n/en.properties
-_/plugins/YourPluigin/i18n/de.properties
-_/plugins/YourPluigin/i18n/__anyotherlanguage__.properties
+_/Plugins/YourPluigin/i18n/en.properties
+_/Plugins/YourPluigin/i18n/de.properties
+_/Plugins/YourPluigin/i18n/__anyotherlanguage__.properties
 
 ```
 
@@ -92,20 +97,24 @@ Type <color=#997d4a>/np help</color> in chat for help.
 
 ## Logger
 
-This feature is for logging stuff to your (server) game console, you can send messages to the logger with different levels. If your plugin has a settings file you can then change logging level for your needs. It will always prepend your plugin-log-tag in front of each message so you can see which message is sent from your plugin.
+This feature uses Log4J framework for logging your plugin stuff in seperate log files.
 
 ```java
-public class NewPlugin extends Plugin{
-    static final String pluginName = "NewPlugin"; // just for the example
+import de.omegazirkel.risingworld.tools.OZLogger;
+import net.risingworld.api.Plugin;
+
+public class NewPlugin extends Plugin {
 
     // Init
-    static final de.omegazirkel.risingworld.tools.Logger log = new de.omegazirkel.risingworld.tools.Logger("[YOURTAG]");
+    private static OZLogger logger() {
+        return OZLogger.getInstance("NewPlugin");
+    }
 
     // Usage example
     @Override
-	public void onEnable() {
-		log.out(pluginName + " Plugin is enabled", 10);
-	}
+    public void onEnable() {
+        logger().info("✅ " + this.getName() + " Plugin is enabled version:" + this.getDescription("version"));
+    }
 }
 ```
 
@@ -116,16 +125,16 @@ This is just a singleton class that holds some color values. The idea behind thi
 ```java
 import de.omegazirkel.risingworld.tools.Colors;
 
-public class NewPlugin extends Plugin{
+public class NewPlugin extends Plugin {
 
     // Init
     static final Colors c = Colors.getInstance();
 
     // Usage example
-	@EventMethod
-	public void onPlayerCommand(PlayerCommandEvent event) {
+    @EventMethod
+    public void onPlayerCommand(PlayerCommandEvent event) {
         Player player = event.getPlayer();
-        player.sendTextMessage(c.okay + pluginName + ":> " + c.text + "Your command was successfully ignored!");
+        player.sendTextMessage(c.okay + pluginName + ":> " + c.endTag + "Your command was successfully ignored!");
     }
 }
 ```
@@ -137,54 +146,42 @@ This static helper class creates 2 new threads to watch the filesystem for chang
 ### Example code
 
 ```java
+
+import de.omegazirkel.risingworld.tools.OZLogger;
 import de.omegazirkel.risingworld.tools.FileChangeListener;
 import de.omegazirkel.risingworld.tools.PluginChangeWatcher;
 
 public class NewPlugin extends Plugin implements FileChangeListener{
 
-    static final de.omegazirkel.risingworld.tools.Logger log = new de.omegazirkel.risingworld.tools.Logger("[MY.Plugin]");
-	static boolean flagRestart = false;
+    private static OZLogger logger() {
+        return OZLogger.getInstance("NewPlugin");
+    }
+    static boolean flagRestart = false;
 
     @Override
-	public void onEnable() {
-
-        // register this plugin for watching changes
-		try {
-			File f = new File(getPath());
-			PluginChangeWatcher.registerFileChangeListener(this, f);
-		} catch (Exception ex) {
-			log.out(ex.toString(), 911);
-		}
+    public void onEnable() {
+        // your stuff
     }
 
+    // Optional
     @Override
-	public void onFileChangeEvent(Path file) {
-		if (file.toString().endsWith("jar")) {
-			if (restartOnUpdate) {
-				Server server = getServer();
+    public void onJarChanged(Path file) {
+        logger().debug("Jar file changed: "+file.toString())
+    }
 
-				if (server.getPlayerCount() > 0) {
-					flagRestart = true;
-				} else {
-					log.out("onFileCreateEvent: <" + file + "> changed, restarting now (no players online)", 100);
-				}
+    // Optional
+    @Override
+    public void onSettingsChanged(Path file) {
+        logger().debug("settings.properties changed: "+file.toString())
+        // this.initSettings();
+    }
 
-			} else {
-				log.out("onFileCreateEvent: <" + file + "> changed but restartOnUpdate is false", 0);
-			}
-		} else {
-			log.out("onFileCreateEvent: <" + file + ">", 0);
-		}
-	}
-
-	@Override
-	public void onFileCreateEvent(Path file) {
-		if (file.toString().endsWith("settings.properties")) {
-			// this.initSettings();
-		} else {
-			log.out(file.toString() + " was changed", 0);
-		}
-	}
+    // Optional
+    @Override
+    public void onOtherFileChanged(Path file) {
+        logger().debug("File changed: "+file.toString())
+        // react as you like
+    }
 
 }
 
