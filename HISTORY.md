@@ -2,6 +2,20 @@
 
 ## [unreleased]
 
+## [0.9.0] - 2025-11-26 | AI-Refactoring
+
+Note: To get this plugin up to date, i've used AI (Gemini/Chat-GPT) to help me fixing some critical issues.
+
+- feat: GitHub Action for maven
+  - needs PluginAPI in ./libs/
+- refactor: Project is now a real Plugin again
+- refactor: now includes all libs
+- refactor: now using Log4J for OZLogger
+- refactor: FileWatcher now watches globally
+  - no need to implement in other plugins
+- refactor: better implementation for WS handling
+- fix: removed non-daemon threads preventing RW from restart/shutdown
+
 ## [0.8.1] - 2025-11-14
 
 - refactor: changed color codes to new format

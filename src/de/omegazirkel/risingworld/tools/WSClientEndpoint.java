@@ -1,196 +1,307 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.omegazirkel.risingworld.tools;
 
-// import java.io.IOException;
+import java.io.File;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutionException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jakarta.websocket.ClientEndpoint;
 import jakarta.websocket.CloseReason;
-import jakarta.websocket.CloseReason.CloseCodes;
-import jakarta.websocket.DeploymentException;
+import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.OnClose;
+import jakarta.websocket.OnError;
 import jakarta.websocket.OnMessage;
 import jakarta.websocket.OnOpen;
-import jakarta.websocket.OnError;
 import jakarta.websocket.Session;
-import org.glassfish.tyrus.client.ClientManager;
-import org.glassfish.tyrus.client.ClientProperties;
+import jakarta.websocket.WebSocketContainer;
 
-/**
- *
- */
 @ClientEndpoint
 public class WSClientEndpoint {
 
-	public static OZLogger logger() {
-        return OZLogger.getInstance("OZ.Tools.WSClientEndpoint");
-    }
+	private static final Map<String, WSClientEndpoint> INSTANCES = new ConcurrentHashMap<>();
 
-	public Session session = null;
-	public boolean isConnected = false;
-	protected URI endpointURI = null;
-	protected MessageHandler messageHandler;
-	// private int disconnectCount = 0;
-	protected ClientManager client;
+	private final URI endpointUri;
 
-	/**
-	 *
-	 * @param endpointURI
-	 */
-	public WSClientEndpoint(URI endpointURI) {
-		this.endpointURI = endpointURI;
-		this.client = ClientManager.createClient();
-		ClientManager.ReconnectHandler reconnectHandler = new ClientManager.ReconnectHandler() {
-			private int counter = 0;
+	private WebSocketHandler handler;
+	private WebSocketContainer container;
+	private ClassLoader extendedClassLoader;
 
-			@Override
-			public boolean onDisconnect(CloseReason closeReason) {
-				final int i = ++counter;
-				logger().out("WebSocket got disconnected: " + closeReason.toString(), 911);
-				if (closeReason.getCloseCode() == CloseCodes.CLOSED_ABNORMALLY) {
-					logger().out("WebSocket reconnecting... " + i, 0);
-					return true;
-				} else {
-					logger().out("WebSocket not reconnecting.", 0);
-					return false;
+	private static OZLogger logger() {
+		return OZLogger.getInstance("OZ.Tools.WSCE");
+	}
+
+	public static void initLogger() {
+		// this is a fix for logs redirected to Discord or other log files.
+		logger();
+	}
+
+	private Session session;
+	private final AtomicBoolean isConnected = new AtomicBoolean(false);
+	private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
+	private final AtomicBoolean isReconnectLoopActive = new AtomicBoolean(false);
+
+	// Executor for reconnect attempts + async connect
+	private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+		Thread th = new Thread(r, "WebSocket-Reconnect");
+		th.setDaemon(true);
+		return th;
+	});
+
+	public WSClientEndpoint(URI uri) {
+		this.endpointUri = uri;
+		// The reconnect loop is now started on the first call to ensureConnected()
+	}
+
+	public WSClientEndpoint(String uri) {
+		this(URI.create(uri));
+	}
+
+	public WSClientEndpoint(URI uri, WebSocketHandler handler) {
+		this(uri);
+		this.handler = handler;
+	}
+
+	public WSClientEndpoint(String uri, WebSocketHandler handler) {
+		this(URI.create(uri), handler);
+	}
+
+	public WSClientEndpoint setHandler(WebSocketHandler handler) {
+		this.handler = handler;
+		return this;
+	}
+
+	public static WSClientEndpoint getInstance(String uri) {
+		return getInstance(URI.create(uri));
+	}
+
+	public static WSClientEndpoint getInstance(String uri, WebSocketHandler handler) {
+		return getInstance(URI.create(uri), handler);
+	}
+
+	public static WSClientEndpoint getInstance(URI uri, WebSocketHandler handler) {
+		return getInstance(uri).setHandler(handler);
+	}
+
+	public static WSClientEndpoint getInstance(URI uri) {
+		String key = uri.toString();
+
+		if (!INSTANCES.containsKey(key)) {
+			INSTANCES.put(key, new WSClientEndpoint(uri));
+		}
+		return INSTANCES.get(key);
+	}
+
+	/** Ensures connection is active, tries async connect if not */
+	private void ensureConnected() {
+		if (isShuttingDown.get())
+			return;
+
+		// Start the reconnect loop only once on the first call
+		if (isReconnectLoopActive.compareAndSet(false, true)) {
+			scheduler.scheduleAtFixedRate(this::reconnectTask, 0, 60, TimeUnit.SECONDS);
+		}
+
+		if (isConnected.get())
+			return;
+
+		logger().info("[WebSocket] Attempting connection to " + endpointUri);
+		connectAsync();
+	}
+
+	/** The actual task that is scheduled to run periodically. */
+	private void reconnectTask() {
+		if (isShuttingDown.get() || isConnected.get()) {
+			return;
+		}
+		connectAsync();
+	}
+
+	/** Connects without blocking the server thread */
+	private void connectAsync() {
+		CompletableFuture.runAsync(() -> {
+			// Temporarily switch the ClassLoader for this thread
+			// This allows ServiceLoader (used by ContainerProvider) to find Tyrus in the
+			// /lib folder.
+			ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+			try {
+				if (extendedClassLoader == null)
+					extendedClassLoader = getExtendedClassLoader(originalClassLoader);
+				Thread.currentThread().setContextClassLoader(extendedClassLoader);
+
+				container = ContainerProvider.getWebSocketContainer();
+				if (container == null) {
+					throw new IllegalStateException(
+							"Could not find a WebSocketContainer implementation. Check if Tyrus JARs are in the /lib directory.");
 				}
-			}
+				container.setDefaultMaxSessionIdleTimeout(0);
 
-			@Override
-			public boolean onConnectFailure(Exception exception) {
-				final int i = ++counter;
-				logger().out("WebSocket failed to connect: " + exception.getMessage(), 911);
-				// if (i <= 30) {
-				logger().out("WebSocket reconnecting... " + i, 0);
-				return i < 10;
-				// } else {
-				// log.out("WebSocket not reconnecting.", 0);
-				// return false;
-				// }
+				Session newSession = container.connectToServer(this, endpointUri);
+
+				this.session = newSession;
+				// onOpen will be called, which sets isConnected and logs the success
+
+			} catch (Exception ex) {
+				isConnected.set(false);
+				logger().warn("❌ WebSocket connection failed: " + ex.getMessage());
+				// Optional: Log the class loader hierarchy for debugging
+				// logger().debug("ClassLoader used: " +
+				// Thread.currentThread().getContextClassLoader().toString());
+			} finally {
+				// IMPORTANT: Always restore the original ClassLoader
+				Thread.currentThread().setContextClassLoader(originalClassLoader);
 			}
-		};
-		this.client.getProperties().put(ClientProperties.RECONNECT_HANDLER, reconnectHandler);
-		this.connect();
+		});
 	}
 
 	/**
-	 *
+	 * Creates a new ClassLoader that includes all JARs from the 'lib' directory.
+	 * 
+	 * @param parent The parent classloader.
+	 * @return A new URLClassLoader.
 	 */
-	protected void connect() {
+	private ClassLoader getExtendedClassLoader(ClassLoader parent) {
 		try {
-			logger().out("WebSocket connecting to " + this.endpointURI, 0);
-			this.session = this.client.asyncConnectToServer(this, this.endpointURI).get();
-			// this.session = this.client.connectToServer(this, this.endpointURI);
-		} catch (DeploymentException | InterruptedException | ExecutionException e) {
-			logger().out(e.getMessage(), 911);
+			File pluginJarFile = new File(
+					WSClientEndpoint.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+			File libDir = new File(pluginJarFile.getParentFile(), "lib");
+
+			if (!libDir.exists() || !libDir.isDirectory()) {
+				logger().warn("⚠️ 'lib' directory not found at: " + libDir.getAbsolutePath()
+						+ ". Dependencies will not be loaded.");
+				return parent; // Return original if no lib dir
+			}
+
+			File[] jarFiles = libDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".jar"));
+			List<URL> urls = new ArrayList<>();
+			for (File jar : Objects.requireNonNull(jarFiles)) {
+				urls.add(jar.toURI().toURL());
+			}
+
+			return new URLClassLoader(urls.toArray(new URL[0]), parent);
+		} catch (Exception e) {
+			logger().error("❌ Failed to create extended ClassLoader: " + e.getMessage());
+			return parent; // Fallback to original
 		}
 	}
 
-	/**
-	 *
-	 * @param session
-	 * @param t
-	 */
-	@OnError
-	public void onError(Session session, Throwable t) {
-		logger().out(t.toString(), 911);
+	// -----------------------------------------------------------------------------------
+	// WebSocket lifecycle methods
+	// -----------------------------------------------------------------------------------
 
-	}
-
-	/**
-	 *
-	 * @param session
-	 */
 	@OnOpen
 	public void onOpen(Session session) {
 		this.session = session;
-		this.isConnected = true;
-		logger().out("WebSocket connected!", 0);
+		isConnected.set(true);
+		logger().info("🔌 WebSocket connection opened");
+		if (handler != null)
+			handler.onConnected(this);
+
 	}
 
-	/**
-	 *
-	 * @param session
-	 * @param reason
-	 */
+	@OnMessage
+	public void onMessage(String message) {
+		logger().info("📩 Received: " + message);
+		// Forward to your tools logic if necessary
+		if (handler != null)
+			handler.onTextMessage(message);
+
+	}
+
+	@OnMessage
+	public void onMessage(ByteBuffer buffer) {
+		logger().info("📩 Received (binary) " + buffer.remaining() + " bytes");
+		if (handler != null)
+			handler.onBinaryMessage(buffer);
+
+	}
+
+	@OnError
+	public void onError(Throwable t) {
+		logger().warn("⚠️ WebSocket error: " + t.getMessage());
+	}
+
 	@OnClose
 	public void onClose(Session session, CloseReason reason) {
+		isConnected.set(false);
 		this.session = null;
-		this.isConnected = false;
-		logger().out("WebSocket closed: " + reason.toString(), 911);
+		logger().warn("🔌 WebSocket disconnected: " + reason);
+		if (handler != null)
+			handler.onDisconnected();
 
 	}
 
-	/**
-	 *
-	 * @param message
-	 * @param session
-	 */
-	@OnMessage
-	public void onMessage(String message, Session session) {
-		if (this.messageHandler != null) {
-			this.messageHandler.handleMessage(message);
-		} else {
-			logger().out("No messageHandler for message: " + message, 0);
+	// -----------------------------------------------------------------------------------
+	// Public API
+	// -----------------------------------------------------------------------------------
+
+	public boolean send(String msg) {
+		ensureConnected(); // Ensure the connection logic is active
+		if (!isConnected.get() || session == null || !session.isOpen())
+			return false;
+		session.getAsyncRemote().sendText(msg);
+		return true;
+	}
+
+	public boolean send(ByteBuffer data) {
+		ensureConnected(); // Ensure the connection logic is active
+		if (!isConnected.get() || session == null || !session.isOpen())
+			return false;
+		session.getAsyncRemote().sendBinary(data);
+		return true;
+	}
+
+	public boolean isConnected() {
+		return isConnected.get();
+	}
+
+	/** Clean shutdown for onDisable() */
+	public void shutdown() {
+		logger().info("🛑 Shutting down WebSocket");
+
+		isShuttingDown.set(true);
+
+		scheduler.shutdownNow();
+
+		if (session != null) {
+			try {
+				session.close(new CloseReason(
+						CloseReason.CloseCodes.NORMAL_CLOSURE,
+						"Plugin shutdown"));
+			} catch (Exception ignored) {
+			}
 		}
-	}
 
-	/**
-	 * 
-	 * @param Buffer
-	 */
-	@OnMessage
-	public void onBinaryMessage(byte[] buffer) {
-		if (this.messageHandler != null) {
-			this.messageHandler.handleBinaryMessage(buffer);
-		} else {
-			logger().out("No messageHandler for buffer: " + buffer.length, 0);
+		// Shutdown the underlying Tyrus/Grizzly container
+		if (container instanceof org.glassfish.tyrus.client.ClientManager) {
+			try {
+				((org.glassfish.tyrus.client.ClientManager) container).shutdown();
+				logger().info("🔌 WebSocket container shut down.");
+			} catch (Exception e) {
+				logger().warn("⚠️ Error shutting down WebSocket container: " + e.getMessage());
+			}
 		}
+
+		isConnected.set(false);
 	}
 
-	/**
-	 *
-	 * @param msgHandler
-	 */
-	public void setMessageHandler(MessageHandler msgHandler) {
-		this.messageHandler = msgHandler;
-	}
-
-	/**
-	 *
-	 * @param message
-	 */
-	public void sendMessage(String message) {
-		this.session.getAsyncRemote().sendText(message);
-	}
-
-	/**
-	 * 
-	 * @param buffer
-	 */
-	public void sendBinaryMessage(ByteBuffer buffer) {
-		try {
-			// if we dont clone the array and create a new buffer, the array will be cleared
-			// before the data get sent to the WS Server.
-			this.session.getAsyncRemote().sendBinary(ByteBuffer.wrap(buffer.array().clone())).get();
-		} catch (InterruptedException | ExecutionException e) {
-			logger().out("Error on sendBinaryMessage: " + e.getMessage(), 911);
+	/** Cleanly shuts down all managed WebSocket client instances. */
+	public static void shutdownAll() {
+		logger().info("🛑 Shutting down all WebSocket clients...");
+		for (WSClientEndpoint client : INSTANCES.values()) {
+			client.shutdown();
 		}
-	}
-
-	/**
-	 *
-	 */
-	public static interface MessageHandler {
-
-		public void handleMessage(String message);
-
-		public void handleBinaryMessage(byte[] buffer);
+		INSTANCES.clear();
+		logger().info("✅ All WebSocket clients have been shut down.");
 	}
 }

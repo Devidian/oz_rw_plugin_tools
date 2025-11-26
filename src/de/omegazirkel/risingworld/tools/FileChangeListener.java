@@ -12,8 +12,12 @@ import java.nio.file.Path;
  * @author Maik
  */
 public interface FileChangeListener {
+    default void onJarChanged(Path jarPath) {
+    }
 
-    public void onFileChangeEvent(Path file);
+    default void onSettingsChanged(Path settingsPath) {
+    }
 
-    public void onFileCreateEvent(Path file);
+    default void onOtherFileChanged(Path filePath) {
+    }
 }

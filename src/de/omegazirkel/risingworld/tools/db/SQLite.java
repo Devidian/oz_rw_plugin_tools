@@ -14,7 +14,8 @@ import net.risingworld.api.database.Database;
 public class SQLite {
     private Plugin plugin = null;
     private Database db = null;
-	public static OZLogger logger() {
+
+    public static OZLogger logger() {
         return OZLogger.getInstance("OZ.Tools.i18n");
     }
 
@@ -41,7 +42,7 @@ public class SQLite {
         if (db == null) {
             String path = plugin.getPath() + "/" + World.getName() + ".db";
             db = plugin.getSQLiteConnection(path);
-            logger().out("Connected to " + path, 0);
+            logger().info("Connected to " + path);
         }
     }
 
@@ -54,7 +55,7 @@ public class SQLite {
         try {
             return db.executeQuery(query);
         } catch (Exception e) {
-            logger().out(e.getMessage(), 911);
+            logger().fatal("Exception (" + e.getClass().getTypeName() + "): " + e.getMessage());
         }
         return null;
     }
@@ -64,7 +65,7 @@ public class SQLite {
         try {
             db.executeUpdate(query);
         } catch (Exception e) {
-            logger().out(e.getMessage(), 911);
+            logger().fatal("Exception (" + e.getClass().getTypeName() + "): " + e.getMessage());
         }
     }
 
@@ -73,7 +74,7 @@ public class SQLite {
         try {
             db.execute(query);
         } catch (Exception e) {
-            logger().out(e.getMessage(), 911);
+            logger().fatal("Exception (" + e.getClass().getTypeName() + "): " + e.getMessage());
         }
     }
 
@@ -82,7 +83,7 @@ public class SQLite {
             db.close();
             db = null;
         } catch (Exception e) {
-            logger().out(e.getMessage(), 911);
+            logger().fatal("Exception (" + e.getClass().getTypeName() + "): " + e.getMessage());
         }
     }
 }

@@ -6,6 +6,8 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
@@ -13,49 +15,51 @@ import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.NullConfiguration;
 
+import de.omegazirkel.risingworld.OZTools;
+
 public class OZLogger {
 
     private static final Map<String, OZLogger> INSTANCES = new ConcurrentHashMap<>();
     private static final boolean DEBUG_MODE = false;
     private static final String CONFIG_FILE = "oz-log4j2.xml";
 
-    public static final int LEVEL_VERBOSE = 0;
-    public static final int LEVEL_DEBUG = 10;
-    public static final int LEVEL_INFO = 20;
-    public static final int LEVEL_WARN = 30;
-    public static final int LEVEL_ERROR = 40;
-    public static final int LEVEL_FATAL = 50;
-
-    private int level = LEVEL_DEBUG;
+    private static boolean isInShutdownMode = false;
 
     private Logger logger() {
-        return ctx.getLogger(loggerName);
+        return ctx != null ? ctx.getLogger(loggerName) : null;
     }
 
     private LoggerContext ctx;
     private final String loggerName;
 
-    public OZLogger(String pluginName, boolean registerOnly) {
-        this.loggerName = pluginName;
-        if (!registerOnly) {
+    public OZLogger(String loggerName, boolean registerOnly) {
+        this.loggerName = loggerName;
+        // prevent init on shutdown and if registerOnly is set
+        if (!registerOnly && !isInShutdownMode) {
             init();
         }
     }
 
-    public OZLogger(String pluginName) {
-        this(pluginName, false);
+    public OZLogger(String loggerName) {
+        this(loggerName, false);
     }
 
     private void init() {
+        // Prevent any re-initialization once the shutdown process has started.
+        if (isInShutdownMode) {
+            System.out.println("[" + loggerName + "] 🆘 Logger initialization skipped, shutdown in progress.");
+            return;
+        }
+
         System.setProperty("logPath", "Logs");
-        System.setProperty("pluginName", loggerName);
+        System.setProperty("loggerName", loggerName);
         try {
             ClassLoader cl = OZLogger.class.getClassLoader();
 
             if (DEBUG_MODE) {
                 Enumeration<URL> urls = cl.getResources(CONFIG_FILE);
                 while (urls.hasMoreElements()) {
-                    System.out.println("[OZLOG] FOUND (candidate): " + urls.nextElement());
+                    System.out.println("🪲 [OzLogger] FOUND (candidate): " + urls.nextElement());
                 }
             }
 
@@ -65,7 +69,7 @@ public class OZLogger {
             }
 
             if (DEBUG_MODE)
-                System.out.println("[OZLOG] USING EXACT CONFIG: " + configUrl + " for " + loggerName);
+                System.out.println("🪲 [OzLogger] USING EXACT CONFIG: " + configUrl + " for " + loggerName);
 
             try (InputStream is = configUrl.openStream()) {
                 ConfigurationSource source = new ConfigurationSource(is, configUrl);
@@ -77,55 +81,105 @@ public class OZLogger {
                 Configuration config = ConfigurationFactory.getInstance().getConfiguration(ctx, source);
                 ctx.start(config);
                 this.ctx = ctx;
+
+                logger().debug("🪲 Logger initialized: " + loggerName + " using config: " + configUrl);
             }
 
         } catch (Exception e) {
-            System.out.println("[!SYS!] Failed to initialize logger: " + e.getMessage());
+            System.out.println("[" + loggerName + "] 🆘 Failed to initialize logger: " + e.getMessage());
             e.printStackTrace();
             this.ctx = new LoggerContext(loggerName);
             this.ctx.start(new NullConfiguration());
         }
     }
 
-    public static OZLogger getInstance(String pluginName) {
-        return INSTANCES.computeIfAbsent(pluginName, k -> {
-            OZLogger logger = new OZLogger(pluginName, true); // "true" = nur Map-Registrierung
-            logger.init(); // Init separat, außerhalb der computeIfAbsent
+    public static OZLogger getInstance(String loggerName) {
+        return INSTANCES.computeIfAbsent(loggerName, k -> {
+            OZLogger logger = new OZLogger(loggerName, true); // "true" = only Map-Register
+            logger.init(); // Init separate, out of computeIfAbsent
             return logger;
         });
     }
 
-    public OZLogger setLogLevel(int toLevel) {
-        level = toLevel;
-        return this;
+    public static void shutdownAll() {
+        isInShutdownMode = true;
+        OZTools.logger().warn("⚠️ Shutting down all logger contexts ...");
+        for (OZLogger logger : INSTANCES.values()) {
+            try {
+                if (logger.ctx != null) {
+                    logger.info("Stopping logger context for " + logger.loggerName);
+                    logger.ctx.stop(); // stop Log4J context
+                    logger.ctx = null; // use fallback logger if any more logs occure
+                }
+            } catch (Exception e) {
+                // optional: minimal log or ignore
+                System.out.println(
+                        "[OZLogger] 🆘 Failed to stop logger context for " + logger.loggerName + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        INSTANCES.clear();
+        // DO NOT shut down LogManager here, to allow for plugin reloads.
+    }
+
+    /**
+     * Completely terminates the Log4j framework.
+     * Should ONLY be called on full server shutdown, not on plugin reload.
+     */
+    public static void terminate() {
+        System.out.println("[OZLogger] Terminating Log4j framework globally.");
+        LogManager.shutdown();
+    }
+
+    /**
+     * Resets the shutdown flag. Should be called from onEnable to ensure a clean
+     * state for reloads.
+     */
+    public static void resetShutdownMode() {
+        isInShutdownMode = false;
+    }
+
+    public void setLevel(Level level) {
+        logger().setLevel(level);
     }
 
     public void debug(String message) {
-        logSafe(logger()::debug, message);
+        if (logger() == null)
+            fallbackLog(message);
+        else
+            logger().debug(message);
     }
 
     public void info(String message) {
-        logSafe(logger()::info, message);
+        if (logger() == null)
+            fallbackLog(message);
+        else
+            logger().info(message);
     }
 
     public void warn(String message) {
-        logSafe(logger()::warn, message);
+        if (logger() == null)
+            fallbackLog(message);
+        else
+            logger().warn(message);
     }
 
     public void error(String message) {
-        logSafe(logger()::error, message);
+        if (logger() == null)
+            fallbackLog(message);
+        else
+            logger().error(message);
     }
 
     public void fatal(String message) {
-        logSafe(logger()::fatal, message);
+        if (logger() == null)
+            fallbackLog(message);
+        else
+            logger().fatal(message);
     }
 
-    private void logSafe(java.util.function.Consumer<String> logMethod, String message) {
-        if (ctx == null || !ctx.isStarted()) {
-            System.out.println("[!SYS!] " + message);
-        } else {
-            logMethod.accept(message);
-        }
+    private void fallbackLog(String message) {
+        System.out.println("[" + loggerName + "] 🆘 " + message);
     }
 
     // for non simple message logs like exceptions
@@ -134,33 +188,4 @@ public class OZLogger {
         return logger();
     }
 
-    // DEPRECATED
-
-    /**
-     *
-     * @param message
-     */
-    public void out(String message) {
-        this.out(message, LEVEL_DEBUG);
-    }
-
-    /**
-     *
-     * @param message
-     * @param level
-     */
-    public void out(String message, int lvl) {
-        if (lvl >= this.level) {
-            if (lvl < LEVEL_INFO)
-                debug(message);
-            else if (lvl < LEVEL_WARN)
-                info(message);
-            else if (lvl < LEVEL_ERROR)
-                warn(message);
-            else if (lvl < LEVEL_FATAL)
-                error(message);
-            else
-                fatal(message);
-        }
-    }
 }

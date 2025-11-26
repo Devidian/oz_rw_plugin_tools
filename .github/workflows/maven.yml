@@ -1,0 +1,27 @@
+# .github/workflows/maven.yml
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 20
+      uses: actions/setup-java@v4
+      with:
+        java-version: '20'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build with Maven
+      # Dieser Befehl führt den kompletten Build durch.
+      # Die 'validate'-Phase wird automatisch aufgerufen und installiert die API.
+      run: mvn -B package --file pom.xml

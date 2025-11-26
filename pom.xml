@@ -2,43 +2,98 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
 	<groupId>de.omegazirkel.risingworld</groupId>
-	<artifactId>tools</artifactId>
-	<version>0.8.2</version>
+	<artifactId>Tools</artifactId>
+	<version>0.9.0</version>
 	<packaging>jar</packaging>
+
+	<!-- Repositories -->
+	<repositories>
+		<repository>
+			<id>central</id>
+			<name>Maven Central Repository</name>
+			<url>https://repo.maven.apache.org/maven2</url>
+		</repository>
+		<repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
+		</repository>
+	</repositories>
+
 	<dependencies>
-		<!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+
+		<!-- dependencies for DiscordPlugin -->
+
+		<!-- Javacord -->
+		<dependency>
+			<groupId>org.javacord</groupId>
+			<artifactId>javacord</artifactId>
+			<version>3.8.0</version>
+			<type>pom</type>
+		</dependency>
+
+		<!-- Apache HttpClient 5 (async + multipart + reactive) -->
+		<dependency>
+			<groupId>org.apache.httpcomponents.client5</groupId>
+			<artifactId>httpclient5</artifactId>
+			<version>5.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.httpcomponents.client5</groupId>
+			<artifactId>httpclient5-fluent</artifactId>
+			<version>5.4</version>
+		</dependency>
+
+		<!-- JSON -->
+		<dependency>
+			<groupId>com.googlecode.json-simple</groupId>
+			<artifactId>json-simple</artifactId>
+			<version>1.1.1</version>
+		</dependency>
+
+		<!-- dependencies for GlobalIntercom -->
+
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.13.2</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/jakarta.websocket/jakarta.websocket-api -->
+
 		<dependency>
 			<groupId>jakarta.websocket</groupId>
 			<artifactId>jakarta.websocket-api</artifactId>
 			<version>2.2.0</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.glassfish.tyrus.bundles/tyrus-standalone-client -->
+
 		<dependency>
-			<groupId>org.glassfish.tyrus.bundles</groupId>
-			<artifactId>tyrus-standalone-client</artifactId>
+			<groupId>jakarta.websocket</groupId>
+			<artifactId>jakarta.websocket-client-api</artifactId>
 			<version>2.2.0</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.glassfish.tyrus</groupId>
+			<artifactId>tyrus-container-grizzly-client</artifactId>
+			<version>2.1.6</version>
+		</dependency>
+
+		<!-- dependencies for this plugin itself -->
 
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
 			<version>2.23.1</version>
-			<scope>compile</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
 			<version>2.23.1</version>
-			<scope>compile</scope>
 		</dependency>
+
+		<!-- RisingWorld API -->
 
 		<dependency>
 			<groupId>net.risingworld</groupId>
@@ -51,9 +106,23 @@
 	<build>
 		<sourceDirectory>src</sourceDirectory>
 		<directory>target</directory>
-		<finalName>${project.artifactId}</finalName>
+		<finalName>OZ-${project.artifactId}</finalName>
+
+		<resources>
+			<resource>
+				<directory>${basedir}/src/main/resources</directory>
+			</resource>
+			<resource>
+				<targetPath>resources</targetPath>
+				<directory>${basedir}/src/resources</directory>
+				<includes>
+					<include>*.yml</include>
+				</includes>
+			</resource>
+		</resources>
+
 		<plugins>
-			<!-- clear shared directory -->
+			<!-- clear tools directory -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-clean-plugin</artifactId>
@@ -61,7 +130,7 @@
 				<configuration>
 					<filesets>
 						<fileset>
-							<directory>${project.basedir}/dist/shared</directory>
+							<directory>${project.basedir}/dist/${project.artifactId}</directory>
 							<includes>
 								<include>**/*</include>
 							</includes>
@@ -72,51 +141,23 @@
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.4.1</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>shade</goal>
-						</goals>
-						<configuration>
-							<shadedArtifactAttached>false</shadedArtifactAttached>
-							<createDependencyReducedPom>false</createDependencyReducedPom>
-							<!-- exclude log4j so it is NOT shaded -->
-							<!-- <artifactSet>
-								<excludes>
-									<exclude>org.apache.logging.log4j:log4j-api</exclude>
-									<exclude>org.apache.logging.log4j:log4j-core</exclude>
-
-									<exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
-									<exclude>org.apache.logging.log4j:log4j-simple</exclude>
-									<exclude>org.apache.logging.log4j:log4j-jul</exclude>
-									<exclude>org.apache.logging.log4j:log4j-iostreams</exclude>
-								</excludes>
-							</artifactSet> -->
-
-							<!-- only log4j-api and log4j-core relocation -->
-							<!-- <relocations>
-								<relocation>
-									<pattern>org.apache.logging.log4j</pattern>
-									<shadedPattern>${project.groupId}.${project.artifactId}.shaded.log4j</shadedPattern>
-								</relocation>
-							</relocations> -->
-							<transformers>
-								<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-							</transformers>
-
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-install-plugin</artifactId>
 				<version>3.1.1</version>
 				<executions>
+					<execution>
+						<id>install-api-lib</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<file>${project.basedir}/libs/PluginAPI.jar</file>
+							<groupId>net.risingworld</groupId>
+							<artifactId>PluginAPI</artifactId>
+							<version>1.0.0</version>
+							<packaging>jar</packaging>
+						</configuration>
+					</execution>
 					<execution>
 						<id>install-local</id>
 						<phase>install</phase>
@@ -145,51 +186,28 @@
 				</configuration>
 			</plugin>
 
-			
-            <!-- <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.2</version>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-                            <Class-Path>./lib/log4j-api-2.23.1.jar</Class-Path>
-                            <Class-Path>./lib/log4j-core-2.23.1.jar</Class-Path>
-                        </manifestEntries>
-                    </archive>
-                </configuration>
-            </plugin> -->
-
-			<!-- <plugin>
+			<!-- Dependency copying -->
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
-				<version>3.5.0</version>
+				<version>3.1.1</version>
 				<executions>
 					<execution>
-						<id>copy-log4j</id>
+						<id>copy-dependencies</id>
 						<phase>package</phase>
 						<goals>
-							<goal>copy</goal>
+							<goal>copy-dependencies</goal>
 						</goals>
 						<configuration>
-							<artifactItems>
-								<artifactItem>
-									<groupId>org.apache.logging.log4j</groupId>
-									<artifactId>log4j-api</artifactId>
-									<version>2.23.1</version>
-									<outputDirectory>${basedir}/dist/shared/lib</outputDirectory>
-								</artifactItem>
-								<artifactItem>
-									<groupId>org.apache.logging.log4j</groupId>
-									<artifactId>log4j-core</artifactId>
-									<version>2.23.1</version>
-									<outputDirectory>${basedir}/dist/shared/lib</outputDirectory>
-								</artifactItem>
-							</artifactItems>
+							<outputDirectory>${basedir}/dist/${project.artifactId}/lib</outputDirectory>
+							<excludeTypes>pom</excludeTypes>
+							<excludeScope>provided</excludeScope>
+							<overWriteIfNewer>true</overWriteIfNewer>
+							<!-- <excludeTransitive>true</excludeTransitive> -->
 						</configuration>
 					</execution>
 				</executions>
-			</plugin> -->
+			</plugin>
 
 			<!-- Resource copying -->
 			<plugin>
@@ -203,7 +221,7 @@
 							<goal>copy-resources</goal>
 						</goals>
 						<configuration>
-							<outputDirectory>${basedir}/dist/shared/lib</outputDirectory>
+							<outputDirectory>${basedir}/dist/${project.artifactId}</outputDirectory>
 							<resources>
 								<resource>
 									<directory>${basedir}/target</directory>
@@ -221,12 +239,30 @@
 							<goal>copy-resources</goal>
 						</goals>
 						<configuration>
-							<outputDirectory>${basedir}/dist/shared</outputDirectory>
+							<outputDirectory>${basedir}/dist/${project.artifactId}</outputDirectory>
 							<resources>
 								<resource>
 									<directory>${basedir}</directory>
 									<includes>
 										<include>*.md</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+					<execution>
+						<id>copy-settings</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${basedir}/dist/${project.artifactId}</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${basedir}/src</directory>
+									<includes>
+										<include>*.properties</include>
 									</includes>
 								</resource>
 							</resources>
@@ -239,7 +275,7 @@
 							<goal>copy-resources</goal>
 						</goals>
 						<configuration>
-							<outputDirectory>${basedir}/dist/shared/assets</outputDirectory>
+							<outputDirectory>${basedir}/dist/${project.artifactId}/assets</outputDirectory>
 							<resources>
 								<resource>
 									<directory>${basedir}/src/assets</directory>
@@ -259,18 +295,18 @@
 				<version>3.6.0</version>
 				<executions>
 					<execution>
-						<id>zip-dist-shared</id>
+						<id>zip-dist-tools</id>
 						<phase>package</phase>
 						<goals>
 							<goal>single</goal>
 						</goals>
 						<configuration>
 							<appendAssemblyId>false</appendAssemblyId>
-							<finalName>shared-${project.version}</finalName>
+							<finalName>${project.artifactId}-${project.version}</finalName>
 
 							<!-- Important: Inline descriptor -->
 							<descriptors>
-								<descriptor>src/assembly/shared.xml</descriptor>
+								<descriptor>src/assembly/tools.xml</descriptor>
 							</descriptors>
 
 							<outputDirectory>${project.basedir}/dist</outputDirectory>

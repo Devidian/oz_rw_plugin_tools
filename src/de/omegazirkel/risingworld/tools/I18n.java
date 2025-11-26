@@ -14,9 +14,8 @@ import net.risingworld.api.Plugin;
 public class I18n {
     private Map<String, Properties> language = new HashMap<String, Properties>();
     private static final String defaultLanguage = "en";
-    private Plugin plugin = null;
-    
-	public static OZLogger logger() {
+
+    public static OZLogger logger() {
         return OZLogger.getInstance("OZ.Tools.i18n");
     }
 
@@ -25,19 +24,7 @@ public class I18n {
      * @param plugin
      */
     public I18n(Plugin plugin) {
-        this.plugin = plugin;
         this.loadLanguageData(plugin.getPath());
-    }
-
-    /**
-     *
-     * @param plugin
-     * @param logLevel
-     */
-    public I18n(Plugin plugin, int logLevel) {
-        this.plugin = plugin;
-        this.loadLanguageData(this.plugin.getPath());
-        logger().setLogLevel(logLevel);
     }
 
     /**
@@ -45,14 +32,14 @@ public class I18n {
      * @param pluginPath
      */
     private void loadLanguageData(String pluginPath) {
-        logger().out("Loading language files from " + pluginPath + "/i18n'");
+        logger().debug("Loading language files from " + pluginPath + "/i18n'");
         File folder = new File(pluginPath + "/i18n");
         File[] listOfFiles = folder.listFiles();
         FileInputStream in;
         try {
-            logger().out("Files found: " + listOfFiles.length, 0);
+            logger().debug("Files found: " + listOfFiles.length);
             for (int i = 0; i < listOfFiles.length; i++) {
-                logger().out("loading: " + listOfFiles[i].getName(), 0);
+                logger().debug("loading: " + listOfFiles[i].getName());
                 if (listOfFiles[i].isFile() && listOfFiles[i].getName().endsWith("properties")) {
                     String lang = listOfFiles[i].getName().substring(0, 2);
                     // log.out("lang: "+lang);
@@ -63,16 +50,16 @@ public class I18n {
                         in.close();
                         this.language.put(lang.toLowerCase(), lngProperties);
                     } catch (FileNotFoundException e) {
-                        logger().out("Error: " + e.getMessage());
+                        logger().fatal("FileNotFoundException: " + e.getMessage());
                         e.printStackTrace();
                     } catch (IOException e) {
-                        logger().out("Error: " + e.getMessage());
+                        logger().fatal("IOException: " + e.getMessage());
                         e.printStackTrace();
                     }
                 }
             }
         } catch (Exception e) {
-            logger().out("Error: " + e.getMessage());
+            logger().fatal("Exception: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -117,7 +104,7 @@ public class I18n {
             }
             return lngProperties.getProperty(key, lngDefaultProperties.getProperty(key, key));
         } catch (Exception e) {
-            logger().out("Error: " + e.getMessage());
+            logger().fatal("Exception: " + e.getMessage());
             e.printStackTrace();
             return key;
         }
