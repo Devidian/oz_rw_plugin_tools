@@ -40,6 +40,15 @@ jobs:
           server-username: ${{ github.actor }}
           server-password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install PluginAPI locally
+        run: |
+          mvn -B install:install-file \
+            -Dfile=libs/PluginAPI.jar \
+            -DgroupId=net.risingworld \
+            -DartifactId=PluginAPI \
+            -Dversion=1.0.0 \
+            -Dpackaging=jar
+
       - name: Build & Deploy
         run: mvn -B -DskipTests deploy
 
