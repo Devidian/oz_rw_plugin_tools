@@ -1,6 +1,6 @@
-# OZTools (shared library)
+# OZTools (Tools for other plugins)
 
-This is a set of shared classes and jar's used by different Plugins.
+This plugin has a set of utilities and libs used by different Plugins.
 
 ## Core Features
 
