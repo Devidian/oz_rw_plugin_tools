@@ -130,7 +130,7 @@ jobs:
             --settings ${{ github.workspace }}/settings.xml \
             -DpomFile="pom.xml" \
             -DrepositoryId="github" \
-            -Durl="https://maven.pkg.github.com/${{ github.repository }}"
+            -Durl="https://maven.pkg.github.com/Devidian/Tools"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
