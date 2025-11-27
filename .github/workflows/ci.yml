@@ -90,6 +90,7 @@ jobs:
             dist/*.zip
             pom.xml
             src/resources/plugin.yml
+            libs/PluginAPI.jar
 
 
   release:
@@ -115,14 +116,24 @@ jobs:
           server-id: github
           settings-path: ${{ github.workspace }}
 
-      # Step 3: Publish JAR artifact to GitHub Packages
+      # Step 3: Install PluginAPI locally for deployment
+      - name: Install PluginAPI locally
+        run: |
+          mvn -B install:install-file \
+            -Dfile=libs/PluginAPI.jar \
+            -DgroupId=net.risingworld \
+            -DartifactId=PluginAPI \
+            -Dversion=1.0.0 \
+            -Dpackaging=jar
+
+      # Step 4: Publish JAR artifact to GitHub Packages
       - name: Publish to GitHub Packages
         run: |
           mvn -B deploy --settings ${{ github.workspace }}/settings.xml -DskipTests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      # Step 4: Create GitHub Release and attach ZIP file
+      # Step 5: Create GitHub Release and attach ZIP file
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
