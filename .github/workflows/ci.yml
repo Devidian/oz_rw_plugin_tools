@@ -7,6 +7,10 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     name: Build Tools Plugin
@@ -125,7 +129,7 @@ jobs:
           echo "Deploying $JAR_FILE to GitHub Packages..."
           # Use deploy:deploy-file to upload only the JAR and its corresponding POM
           # This avoids re-running the build and trying to deploy the ZIP to the Maven repo
-          mvn -B deploy:deploy-file \
+          mvn -B -X deploy:deploy-file \
             -Dfile="$JAR_FILE" \
             --settings ${{ github.workspace }}/settings.xml \
             -DpomFile="pom.xml" \
