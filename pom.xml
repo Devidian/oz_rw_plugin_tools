@@ -18,7 +18,7 @@
 		<repository>
 			<id>github</id>
 			<name>GitHub Packages</name>
-			<url>https://maven.pkg.github.com/Devidian/Tools</url>
+			<url>https://maven.pkg.github.com/devidian/tools</url>
 		</repository>
 	</distributionManagement>
 
