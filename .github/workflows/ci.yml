@@ -122,6 +122,9 @@ jobs:
           settings-path: ${{ github.workspace }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check generated Maven settings.xml
+        run: cat ${{ github.workspace }}/settings.xml
+
       # Step 3: Publish JAR artifact to GitHub Packages
       - name: Publish to GitHub Packages
         run: |
