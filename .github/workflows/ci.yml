@@ -120,6 +120,7 @@ jobs:
           # Important: Server ID must match the one in settings.xml and pom.xml
           server-id: github
           settings-path: ${{ github.workspace }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 3: Publish JAR artifact to GitHub Packages
       - name: Publish to GitHub Packages
