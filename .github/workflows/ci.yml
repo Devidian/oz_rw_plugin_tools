@@ -134,13 +134,14 @@ jobs:
           # Use deploy:deploy-file to upload only the JAR and its corresponding POM
           # This avoids re-running the build and trying to deploy the ZIP to the Maven repo
           mvn -B -X deploy:deploy-file \
-            -Dfile="$JAR_FILE" \
             --settings ${{ github.workspace }}/settings.xml \
+            -Dfile="$JAR_FILE" \
             -DpomFile="pom.xml" \
             -DrepositoryId="github" \
             -Durl="https://maven.pkg.github.com/Devidian/oz_rw_plugin_tools"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
       
       # Step 4: Create GitHub Release and attach ZIP file
       - name: Create GitHub Release
@@ -152,3 +153,4 @@ jobs:
             dist/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
