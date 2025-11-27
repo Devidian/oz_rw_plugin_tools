@@ -1,4 +1,4 @@
-name: Build and Release
+name: Build and Release (Tools)
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Build Plugin
+    name: Build Tools Plugin
     runs-on: ubuntu-latest
 
     outputs:
@@ -19,9 +19,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Extract version if this is a tag build
+      # Detect version (from tag or fallback SNAPSHOT)
       - id: meta
-        name: Detect version from tag
+        name: Detect version
         run: |
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF##*/}"
@@ -47,10 +47,14 @@ jobs:
             -Dversion=1.0.0 \
             -Dpackaging=jar
 
+      # Install xmlstarlet
       - name: Install xmlstarlet
-        run: sudo apt-get update && sudo apt-get install -y xmlstarlet
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xmlstarlet
 
-      - name: Patch project version (only on tag build)
+      # Patch version in pom + src/resources/plugin.yml
+      - name: Patch versions (tag only)
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           VERSION="${{ steps.meta.outputs.version }}"
@@ -63,8 +67,13 @@ jobs:
           echo "Patching src/resources/plugin.yml → ${VERSION}"
           sed -i "s/^version: .*/version: ${VERSION}/" src/resources/plugin.yml
 
-      - name: Show patched pom version
-        run: grep -R "<version>" -n pom.xml | head -n 5
+      - name: Show patched version
+        run: |
+          echo "POM VERSION:"
+          grep -R "<version>" -n pom.xml | head -n 5
+          echo ""
+          echo "PLUGIN.YML VERSION:"
+          grep -R "version:" -n src/resources/plugin.yml
 
       - name: Build with Maven
         run: mvn -B package
@@ -116,20 +125,24 @@ jobs:
           </settings>
           EOF
 
-      # 🔥 Deploy the JAR
-      - name: Deploy JAR to GitHub Maven Repo
+      # 🟦 Deploy JAR
+      - name: Deploy JAR
         run: |
+          JAR=$(ls target/*.jar | head -n 1)
+          echo "Deploying $JAR"
           mvn deploy:deploy-file \
-            -Dfile=target/*.jar \
+            -Dfile="$JAR" \
             -DpomFile=pom.xml \
             -DrepositoryId=github \
             -Durl=https://maven.pkg.github.com/${{ github.repository }}
 
-      # 🔥 Deploy the ZIP as a classifier
-      - name: Deploy ZIP to GitHub Maven Repo
+      # 🟦 Deploy ZIP (as classifier)
+      - name: Deploy ZIP
         run: |
+          ZIP=$(ls target/*.zip | head -n 1)
+          echo "Deploying $ZIP"
           mvn deploy:deploy-file \
-            -Dfile=target/*.zip \
+            -Dfile="$ZIP" \
             -DpomFile=pom.xml \
             -Dclassifier=dist \
             -Dpackaging=zip \
@@ -139,7 +152,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          name: "Release ${{ needs.build.outputs.version }}"
+          name: "Tools ${{ needs.build.outputs.version }}"
           tag_name: "${{ github.ref_name }}"
           files: |
             target/*.jar
