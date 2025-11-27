@@ -90,7 +90,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download build output
+      - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-output
@@ -116,17 +116,31 @@ jobs:
           </settings>
           EOF
 
-      - name: Deploy to GitHub Maven Repository
+      # 🔥 Deploy the JAR
+      - name: Deploy JAR to GitHub Maven Repo
         run: |
-          mvn -B deploy -Dregistry=github
+          mvn deploy:deploy-file \
+            -Dfile=target/*.jar \
+            -DpomFile=pom.xml \
+            -DrepositoryId=github \
+            -Durl=https://maven.pkg.github.com/${{ github.repository }}
+
+      # 🔥 Deploy the ZIP as a classifier
+      - name: Deploy ZIP to GitHub Maven Repo
+        run: |
+          mvn deploy:deploy-file \
+            -Dfile=target/*.zip \
+            -DpomFile=pom.xml \
+            -Dclassifier=dist \
+            -Dpackaging=zip \
+            -DrepositoryId=github \
+            -Durl=https://maven.pkg.github.com/${{ github.repository }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           name: "Release ${{ needs.build.outputs.version }}"
           tag_name: "${{ github.ref_name }}"
-          draft: false
-          prerelease: false
           files: |
             target/*.jar
             target/*.zip
