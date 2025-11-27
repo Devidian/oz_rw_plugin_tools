@@ -48,24 +48,27 @@ jobs:
             -Dpackaging=jar
 
       # Install xmlstarlet
-      - name: Install xmlstarlet
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xmlstarlet
+    #   - name: Install xmlstarlet
+    #     run: |
+    #       sudo apt-get update
+    #       sudo apt-get install -y xmlstarlet
 
       # Patch version in pom + src/resources/plugin.yml
       - name: Patch versions (tag only)
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           VERSION="${{ steps.meta.outputs.version }}"
-
+      
           echo "Patching pom.xml → ${VERSION}"
-          xmlstarlet ed -L \
-          -u "/project/*[local-name()='version' and preceding-sibling::*[local-name()='artifactId' and text()='Tools']]" \
-          -v "${VERSION}" pom.xml
-
-          echo "Patching src/resources/plugin.yml → ${VERSION}"
-          sed -i "s/^version: .*/version: ${VERSION}/" src/resources/plugin.yml
+          awk -v newver="$VERSION" '
+            /<artifactId>Tools<\/artifactId>/ { print; found=1; next }
+            found == 1 && /<version>/ { sub(/<version>.*<\/version>/, "<version>" newver "</version>"); found=0 }
+            { print }
+          ' pom.xml > pom.xml.tmp && mv pom.xml.tmp pom.xml
+      
+          echo "Patching plugin.yml → ${VERSION}"
+          sed -i "s/^version: .*/version: ${VERSION}/" plugin.yml
+      
 
       - name: Show patched version
         run: |
