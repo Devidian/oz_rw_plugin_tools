@@ -32,7 +32,7 @@ jobs:
       - name: Update Tools dependency (GlobalIntercom)
         run: |
           cd globalintercom
-          sed -i "s|\(<artifactId>Tools<\/artifactId>.*<version>\)[^<]*|\1${VERSION}|" pom.xml
+          sed -i "s|\(<groupId>devidian</groupId>.*<artifactId>Tools</artifactId>.*<version>\)[^<]*|\1${VERSION}|" pom.xml
 
       - name: Commit & PR for GlobalIntercom
         uses: peter-evans/create-pull-request@v6
@@ -57,7 +57,7 @@ jobs:
       - name: Update Tools dependency (DiscordPlugin)
         run: |
           cd discord
-          sed -i "s|\(<artifactId>Tools<\/artifactId>.*<version>\)[^<]*|\1${VERSION}|" pom.xml
+          sed -i "s|\(<groupId>devidian</groupId>.*<artifactId>Tools</artifactId>.*<version>\)[^<]*|\1${VERSION}|" pom.xml
 
       - name: Commit & PR for DiscordPlugin
         uses: peter-evans/create-pull-request@v6

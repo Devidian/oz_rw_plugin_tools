@@ -6,7 +6,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>de.omegazirkel.risingworld</groupId>
+	<groupId>devidian</groupId>
 	<artifactId>Tools</artifactId>
 	<!-- set by CI workflow -->
 	<version>0.9.7</version>
