@@ -117,24 +117,23 @@ jobs:
           server-id: github
           settings-path: ${{ github.workspace }}
 
-      # Step 3: Install PluginAPI locally for deployment
-      - name: Install PluginAPI locally
-        run: |
-          mvn -B install:install-file \
-            -Dfile=libs/PluginAPI.jar \
-            -DgroupId=net.risingworld \
-            -DartifactId=PluginAPI \
-            -Dversion=1.0.0 \
-            -Dpackaging=jar
-
-      # Step 4: Publish JAR artifact to GitHub Packages
+      # Step 3: Publish JAR artifact to GitHub Packages
       - name: Publish to GitHub Packages
         run: |
-          mvn -B deploy --settings ${{ github.workspace }}/settings.xml -DskipTests
+          # Find the JAR file that was downloaded from the build job
+          JAR_FILE=$(ls target/*.jar | head -n 1)
+          echo "Deploying $JAR_FILE to GitHub Packages..."
+          # Use deploy:deploy-file to upload only the JAR and its corresponding POM
+          # This avoids re-running the build and trying to deploy the ZIP to the Maven repo
+          mvn -B deploy:deploy-file \
+            -Dfile="$JAR_FILE" \
+            -DpomFile="pom.xml" \
+            -DrepositoryId="github" \
+            -Durl="https://maven.pkg.github.com/${{ github.repository }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      # Step 5: Create GitHub Release and attach ZIP file
+      # Step 4: Create GitHub Release and attach ZIP file
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
