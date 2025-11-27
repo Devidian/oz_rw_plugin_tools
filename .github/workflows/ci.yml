@@ -66,8 +66,8 @@ jobs:
             { print }
           ' pom.xml > pom.xml.tmp && mv pom.xml.tmp pom.xml
       
-          echo "Patching plugin.yml → ${VERSION}"
-          sed -i "s/^version: .*/version: ${VERSION}/" plugin.yml
+          echo "Patching src/resources/plugin.yml → ${VERSION}"
+          sed -i "s/^version: .*/version: ${VERSION}/" src/resources/plugin.yml
       
 
       - name: Show patched version
