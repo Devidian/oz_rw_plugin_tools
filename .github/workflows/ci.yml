@@ -91,6 +91,7 @@ jobs:
             pom.xml
             src/resources/plugin.yml
             libs/PluginAPI.jar
+            src/assembly/tools.xml
 
 
   release:
