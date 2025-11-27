@@ -60,8 +60,8 @@ jobs:
             -u "/project/version" \
             -v "${VERSION}" pom.xml
 
-          echo "Patching plugin.yml → ${VERSION}"
-          sed -i "s/^version: .*/version: ${VERSION}/" plugin.yml
+          echo "Patching src/resources/plugin.yml → ${VERSION}"
+          sed -i "s/^version: .*/version: ${VERSION}/" src/resources/plugin.yml
 
       - name: Show patched pom version
         run: grep -R "<version>" -n pom.xml | head -n 5
