@@ -61,8 +61,8 @@ jobs:
 
           echo "Patching pom.xml → ${VERSION}"
           xmlstarlet ed -L \
-            -u "/project/version" \
-            -v "${VERSION}" pom.xml
+          -u "/project/*[local-name()='version' and preceding-sibling::*[local-name()='artifactId' and text()='Tools']]" \
+          -v "${VERSION}" pom.xml
 
           echo "Patching src/resources/plugin.yml → ${VERSION}"
           sed -i "s/^version: .*/version: ${VERSION}/" src/resources/plugin.yml
